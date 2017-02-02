@@ -30,10 +30,10 @@ class TaskStatusHistory
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),
-                    'event' => str_replace('%s', $taskOwner->name, $taskOwner === \Auth::user()->id ?
+                    'event' => str_replace('%s', $taskOwner->name, $taskOwner->_id === \Auth::user()->id ?
                         $taskHistoryStatuses['claimed']
                         : $taskHistoryStatuses['assigned']),
-                    'status' => $taskOwner === \Auth::user()->id ? 'claimed' : 'assigned'
+                    'status' => $taskOwner->_id === \Auth::user()->id ? 'claimed' : 'assigned'
                 ];
             }
 

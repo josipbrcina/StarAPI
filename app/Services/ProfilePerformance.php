@@ -271,8 +271,11 @@ class ProfilePerformance
         // Award xp based on complexity
         $xpAward = $xp <= 200 ? $taskComplexity * $estimatedHours * 10 / $xp : 0;
 
+        $hourlyRate = Config::get('sharedSettings.internalConfiguration.hourlyRate');
+
         $out = [];
         $out['xp'] = $xpAward;
+        $out['payout'] = InputHandler::getFloat($hourlyRate) * $task->estimatedHours;
         $out['estimatedHours'] = $estimatedHours;
 
         return $out;
@@ -334,10 +337,10 @@ class ProfilePerformance
         $costGrossMinimum = $this->calculateSalaryCostForAmount($realPayout, $coefficient);
         $grossMinimum = $this->calculateSalaryGrossForAmount($costGrossMinimum);
 
-        $aggregated['costTotal'] = round($costReal, 2);
-        $aggregated['minimalGrossPayout'] = round($grossMinimum, 2);
-        $aggregated['realGrossPayout'] = round($grossReal, 2);
-        $aggregated['grossBonusPayout'] = round($grossReal - $grossMinimum, 2);
+        $aggregated['costTotal'] = $this->roundFloat($costReal, 2, 10);
+        $aggregated['minimalGrossPayout'] = $this->roundFloat($grossMinimum, 2, 10);
+        $aggregated['realGrossPayout'] = $this->roundFloat($grossReal, 2, 10);
+        $aggregated['grossBonusPayout'] = $this->roundFloat($grossReal - $grossMinimum, 2, 10);
         $aggregated['costXpBasedPayout'] = $xpBasedPayout;
         $aggregated['employeeRole'] = $role;
         $aggregated['roleMinimumReached'] = $grossReal > $grossMinimum;
@@ -371,5 +374,24 @@ class ProfilePerformance
         // 17.2% is fixed cost over gross salary in Croatia
         $gross = $totalGross / 1.172;
         return $gross;
+    }
+
+    /**
+     * Helper method to round the float correctly
+     *
+     * @param $float
+     * @param $position
+     * @param $startAt
+     * @return mixed
+     */
+    private function roundFloat($float, $position, $startAt)
+    {
+        if ($position < $startAt) {
+            $startAt--;
+            $newFloat = round($float, $startAt);
+            return $this->roundFloat($newFloat, $position, $startAt);
+        }
+
+        return $float;
     }
 }

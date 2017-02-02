@@ -46,11 +46,13 @@ class Kernel extends ConsoleKernel
             ->mondays()
             ->at('08:00');
 
-        $schedule->command('email:profile:performance 0 --accountants')->when(function () {
-            $workDays = WorkDays::getWorkDays();
-            $lastWorkDay = end($workDays);
-            return Carbon::parse($lastWorkDay)->isToday();
-        });
+        $schedule->command('email:profile:performance 0 --accountants')
+            ->dailyAt('16:00')
+            ->when(function () {
+                $workDays = WorkDays::getWorkDays();
+                $lastWorkDay = end($workDays);
+                return Carbon::parse($lastWorkDay)->isToday();
+            });
 
         $schedule->command('employee:minimum:check')
             ->monthlyOn(1, '08:00');

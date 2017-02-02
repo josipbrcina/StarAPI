@@ -10,6 +10,7 @@ return [
             'standard' => 'Standard',
             'accountant' => 'Accountant',
         ],
+        'hourlyRate' => 500,
         'employees' => [
             'roles' => [
                 'Apprentice' => [

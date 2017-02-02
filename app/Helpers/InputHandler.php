@@ -26,6 +26,29 @@ class InputHandler
         throw new \Exception('Unrecognized unix timestamp format');
     }
 
+    /**
+     * @param $float
+     * @return float
+     * @throws \Exception
+     */
+    public static function getFloat($float)
+    {
+        if (is_float($float)) {
+            return $float;
+        }
+
+        if ((float) $float == $float) {
+            return (float) $float;
+        }
+
+        throw new \Exception('Input not a float.');
+    }
+
+    /**
+     * @param $input
+     * @return int
+     * @throws \Exception
+     */
     public static function getInteger($input)
     {
         if (is_numeric($input) === true) {
