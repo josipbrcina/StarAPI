@@ -29,7 +29,9 @@
         ],
         "psr-4": {
             "App\\": "app/",
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "TheShop\\Projects\\": "theshop/projects/src/",
+            "TheShop\\Tests\\": "theshop/projects/tests"
         }
     },
     "autoload-dev": {

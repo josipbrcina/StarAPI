@@ -149,6 +149,7 @@ return [
         Jenssegers\Mongodb\Auth\PasswordResetServiceProvider::class,
         Tymon\JWTAuth\Providers\JWTAuthServiceProvider::class,
         Vluzrmos\SlackApi\SlackApiServiceProvider::class,
+        TheShop\Projects\Providers\TheShopProvider::class,
 
         /*
          * Application Service Providers...

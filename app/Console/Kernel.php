@@ -16,12 +16,7 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\SprintReminder::class,
-        Commands\XpDeduction::class,
-        Commands\UnfinishedTasks::class,
-        Commands\EmailProfilePerformance::class,
-        Commands\MonthlyMinimumCheck::class,
-        Commands\NotifyAdminsTaskDeadline::class
+        Commands\XpDeduction::class
     ];
 
     /**

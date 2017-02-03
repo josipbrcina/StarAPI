@@ -32,10 +32,6 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
         Route::get('profiles/{id}/performance', 'ProfileController@getPerformance');
         Route::resource('profiles', 'ProfileController');
         Route::resource('validations', 'ValidationController');
-        Route::get('projects/{id}/uploads', 'FileUploadController@getProjectUploads');
-        Route::put('projects/{id}/makeReservation', 'ReservationController@make');
-        Route::put('projects/{id}/acceptReservation', 'ReservationController@accept');
-        Route::put('projects/{id}/declineReservation', 'ReservationController@decline');
         Route::get('database/listCollections', 'DatabaseController@listCollections');
         Route::post('slack/message', 'SlackController@sendMessage');
         Route::get('slack/users', 'SlackController@getUsers');
@@ -52,8 +48,9 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
         Route::put('trello/board/{boardId}/ticket/{id}', 'TrelloController@setDueDate');
         Route::get('configuration', 'ConfigurationController@getConfiguration');
         Route::post('email', 'EmailController@sendEmail');
-        Route::post('upload', 'FileUploadController@uploadFile');
-
+        Route::get('testing', function () {
+            return response()->json('Hoola!', 200);
+        });
 
         /**
          * Generic resources routes

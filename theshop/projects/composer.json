@@ -1,0 +1,25 @@
+{
+  "name": "theshop/projects",
+  "description": "Project related code for The Shop Platform to work with StarApi",
+  "license": "DBAD",
+  "keywords": ["The Shop", "Laravel"],
+  "authors": [
+    {
+      "name": "The Shop Company d.o.o.",
+      "email": "mlotar@the-shop.hr"
+    }
+  ],
+  "require": {
+    "php": ">=5.5.9",
+    "illuminate/support": "~5"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "4.0.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "TheShop\\Projects\\": "src/",
+      "TheShop\\Tests\\": "tests/"
+    }
+  }
+}
