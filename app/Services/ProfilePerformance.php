@@ -217,6 +217,35 @@ class ProfilePerformance
     }
 
     /**
+     * @param GenericModel $task
+     * @param Profile $taskOwner
+     * @return float|int
+     */
+    public function getDurationCoefficient(GenericModel $task, Profile $taskOwner)
+    {
+        $mappedValues = $this->getTaskValuesForProfile($taskOwner, $task);
+
+        $profileCoefficient = 0.9;
+        if ((float)$taskOwner->xp > 200 && (float)$taskOwner->xp <= 400) {
+            $profileCoefficient = 0.8;
+        } elseif ((float)$taskOwner->xp > 400 && (float)$taskOwner->xp <= 600) {
+            $profileCoefficient = 0.6;
+        } elseif ((float)$taskOwner->xp > 600 && (float)$taskOwner->xp <= 800) {
+            $profileCoefficient = 0.4;
+        } elseif ((float)$taskOwner->xp > 800 && (float)$taskOwner->xp <= 1000) {
+            $profileCoefficient = 0.2;
+        } elseif ((float)$taskOwner->xp > 1000) {
+            $profileCoefficient = 0.1;
+        }
+
+        if ((int)$mappedValues['estimatedHours'] < 10) {
+            return ((int)$mappedValues['estimatedHours'] / 10) * $profileCoefficient;
+        }
+
+        return $profileCoefficient;
+    }
+
+    /**
      * Calculates salary based on performance in time range
      *
      * @param array $aggregated

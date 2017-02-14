@@ -67,9 +67,9 @@ class TaskUpdateXP
             if ($secondsWorking > 0 && $estimatedSeconds > 1) {
                 $xpDiff = 0;
                 $message = null;
-                $taskXp = (float)$taskOwnerProfile->xp <= 200 ? (float)$mappedValues['xp'] : 1.0;
+                $taskXp = (float) $taskOwnerProfile->xp <= 200 ? (float) $mappedValues['xp'] : 1.0;
                 if ($taskSpeedCoefficient < 0.75) {
-                    $xpDiff = $taskXp * $this->getDurationCoefficient($task, $taskOwnerProfile);
+                    $xpDiff = $taskXp * $profilePerformance->getDurationCoefficient($task, $taskOwnerProfile);
                     $message = 'Early task delivery: ' . $taskLink;
                 } elseif ($taskSpeedCoefficient > 1 && $taskSpeedCoefficient <= 1.1) {
                     $xpDiff = -1;
@@ -91,7 +91,7 @@ class TaskUpdateXP
                     $records[] = [
                         'xp' => $xpDiff,
                         'details' => $message,
-                        'timestamp' => (int)((new \DateTime())->format('U') . '000') // Microtime
+                        'timestamp' => (int) ((new \DateTime())->format('U') . '000') // Microtime
                     ];
                     $profileXpRecord->records = $records;
                     $profileXpRecord->save();
@@ -124,7 +124,7 @@ class TaskUpdateXP
                     $records[] = [
                         'xp' => $poXpDiff,
                         'details' => $poMessage,
-                        'timestamp' => (int)((new \DateTime())->format('U') . '000') // Microtime
+                        'timestamp' => (int) ((new \DateTime())->format('U') . '000') // Microtime
                     ];
                     $projectOwnerXpRecord->records = $records;
                     $projectOwnerXpRecord->save();
@@ -158,36 +158,6 @@ class TaskUpdateXP
         GenericModel::setCollection($oldCollection);
 
         return $profileXp;
-    }
-
-    /**
-     * @param GenericModel $task
-     * @param Profile $taskOwner
-     * @return float|int
-     */
-    private function getDurationCoefficient(GenericModel $task, Profile $taskOwner)
-    {
-        $profilePerformance = new ProfilePerformance();
-        $mappedValues = $profilePerformance->getTaskValuesForProfile($taskOwner, $task);
-
-        $profileCoefficient = 0.9;
-        if ((float)$taskOwner->xp > 200 && (float)$taskOwner->xp <= 400) {
-            $profileCoefficient = 0.8;
-        } elseif ((float)$taskOwner->xp > 400 && (float)$taskOwner->xp <= 600) {
-            $profileCoefficient = 0.6;
-        } elseif ((float)$taskOwner->xp > 600 && (float)$taskOwner->xp <= 800) {
-            $profileCoefficient = 0.4;
-        } elseif ((float)$taskOwner->xp > 800 && (float)$taskOwner->xp <= 1000) {
-            $profileCoefficient = 0.2;
-        } elseif ((float)$taskOwner->xp > 1000) {
-            $profileCoefficient = 0.1;
-        }
-
-        if ((int)$mappedValues['estimatedHours'] < 10) {
-            return ((int)$mappedValues['estimatedHours'] / 10) * $profileCoefficient;
-        }
-
-        return $profileCoefficient;
     }
 
     /**
