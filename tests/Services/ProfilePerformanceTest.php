@@ -91,6 +91,9 @@ class ProfilePerformanceTest extends TestCase
         $this->assertEquals(0, $profilePerformanceArray['pauseSeconds']);
     }
 
+    /**
+     * Test profile performance XP difference output
+     */
     public function testProfilePerformanceForTimeRangeXpDiff()
     {
         $profileXpRecord = $this->getXpRecord();
