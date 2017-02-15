@@ -200,8 +200,8 @@ class TaskUpdateXpTest extends TestCase
         //qa was 10 mins
         $worked[$task->owner]['qa'] = 10 * 60;
 
-        //qa_progress was 10mins
-        $worked[$task->owner]['qa_progress'] = 10 * 60;
+        //qa_in_progress was 10mins
+        $worked[$task->owner]['qa_in_progress'] = 10 * 60;
 
         //task worked 15 mins
         $worked[$task->owner]['worked'] = 15 * 60;
@@ -244,8 +244,8 @@ class TaskUpdateXpTest extends TestCase
         //qa was 10 mins
         $worked[$task->owner]['qa'] = 25 * 60 * 60;
 
-        //qa_progress was 40mins
-        $worked[$task->owner]['qa_progress'] = 40 * 60;
+        //qa_in_progress was 40mins
+        $worked[$task->owner]['qa_in_progress'] = 40 * 60;
 
         //task worked 15 mins
         $worked[$task->owner]['worked'] = 15 * 60;

@@ -44,8 +44,8 @@ class TaskStatusTimeCalculation
                     'worked' => 0,
                     'paused' => 0,
                     'qa' => 0,
-                    'qa_progress' => 0,
-                    'qa_progress_total' => 0,
+                    'qa_in_progress' => 0,
+                    'qa_total_time' => 0,
                     'blocked' => 0,
                     'workTrackTimestamp' => $unixTime,
                     'timeAssigned' => $unixTime
@@ -57,8 +57,8 @@ class TaskStatusTimeCalculation
                 'worked' => 0,
                 'paused' => 0,
                 'qa' => 0,
-                'qa_progress' => 0,
-                'qa_progress_total' => 0,
+                'qa_in_progress' => 0,
+                'qa_total_time' => 0,
                 'blocked' => 0,
                 'workTrackTimestamp' => $unixTime,
                 'timeAssigned' => $unixTime
@@ -81,7 +81,7 @@ class TaskStatusTimeCalculation
                         if ($task->paused !== true
                             && $task->blocked !== true
                             && $task->submitted_for_qa !== true
-                            && $task->qa_progress !== true
+                            && $task->qa_in_progress !== true
                         ) {
                             $work[$ownerId]['worked'] += $calculatedTime;
                         }
@@ -94,9 +94,9 @@ class TaskStatusTimeCalculation
                         if ($task->blocked) {
                             $work[$ownerId]['blocked'] += $calculatedTime;
                         }
-                        if ($task->qa_progress) {
-                            $work[$ownerId]['qa_progress'] += $calculatedTime;
-                            $work[$ownerId]['qa_progress_total'] += $calculatedTime;
+                        if ($task->qa_in_progress) {
+                            $work[$ownerId]['qa_in_progress'] += $calculatedTime;
+                            $work[$ownerId]['qa_total_time'] += $calculatedTime;
                         }
 
                         $work[$ownerId]['timeRemoved'] = $unixTime;
@@ -113,7 +113,7 @@ class TaskStatusTimeCalculation
             }
 
             //when task status is paused/resumed calculate time for worked/paused
-            if (key_exists('paused', $updatedFields) && !key_exists('qa_progress', $updatedFields)) {
+            if (key_exists('paused', $updatedFields) && !key_exists('qa_in_progress', $updatedFields)) {
                 $work = $task->work;
                 $calculatedTime = (int)($unixTime - $work[$task->owner]['workTrackTimestamp']);
                 $updatedFields['paused'] === true ?
@@ -136,7 +136,7 @@ class TaskStatusTimeCalculation
             }
             //when task status is submitted_for_qa calculate time for worked
             if (key_exists('submitted_for_qa', $updatedFields)
-                && !key_exists('qa_progress', $updatedFields)
+                && !key_exists('qa_in_progress', $updatedFields)
                 && $updatedFields['submitted_for_qa'] === true
             ) {
                 $work = $task->work;
@@ -146,15 +146,15 @@ class TaskStatusTimeCalculation
 
                 $task->work = $work;
             }
-            //when task status is set to failed QA calculate time for qa_progress
-            if (key_exists('qa_progress', $updatedFields) && !key_exists('passed_qa', $updatedFields)) {
+            //when task status is set to failed QA calculate time for qa_in_progress
+            if (key_exists('qa_in_progress', $updatedFields) && !key_exists('passed_qa', $updatedFields)) {
                 $work = $task->work;
                 $calculatedTime = (int)($unixTime - $work[$task->owner]['workTrackTimestamp']);
-                if ($updatedFields['qa_progress'] === true) {
+                if ($updatedFields['qa_in_progress'] === true) {
                     $work[$task->owner]['qa'] += $calculatedTime;
                 } else {
-                    $work[$task->owner]['qa_progress'] = 0;
-                    $work[$task->owner]['qa_progress_total'] += $calculatedTime;
+                    $work[$task->owner]['qa_in_progress'] = 0;
+                    $work[$task->owner]['qa_total_time'] += $calculatedTime;
                 }
                 $work[$task->owner]['workTrackTimestamp'] = $unixTime;
 
@@ -164,8 +164,8 @@ class TaskStatusTimeCalculation
             if (key_exists('passed_qa', $updatedFields) && $updatedFields['passed_qa'] === true) {
                 $work = $task->work;
                 $calculatedTime = (int)($unixTime - $work[$task->owner]['workTrackTimestamp']);
-                $work[$task->owner]['qa_progress'] += $calculatedTime;
-                $work[$task->owner]['qa_progress_total'] += $calculatedTime;
+                $work[$task->owner]['qa_in_progress'] += $calculatedTime;
+                $work[$task->owner]['qa_total_time'] += $calculatedTime;
                 $work[$task->owner]['workTrackTimestamp'] = $unixTime;
 
                 $task->work = $work;
