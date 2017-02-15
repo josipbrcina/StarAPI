@@ -94,13 +94,18 @@ class ProfilePerformance
             }
         }
 
-        // Let's see the XP diff
+        // Let's see the XP diff within time range
         if ($profile->xp_id) {
             GenericModel::setCollection('xp');
+            $unixStartDate = \DateTime::createFromFormat('U', $unixStart)->format('Y-m-d');
+            $unixEndDate = \DateTime::createFromFormat('U', $unixEnd)->format('Y-m-d');
             $xpRecord = GenericModel::find($profile->xp_id);
             if ($xpRecord) {
                 foreach ($xpRecord->records as $record) {
-                    $xpDiff += $record['xp'];
+                    $recordDate = date ('Y-m-d', InputHandler::getUnixTimestamp($record['timestamp']));
+                    if ($recordDate >= $unixStartDate && $recordDate <= $unixEndDate) {
+                        $xpDiff += $record['xp'];
+                    }
                 }
             }
         }

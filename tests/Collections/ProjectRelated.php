@@ -118,4 +118,41 @@ trait ProjectRelated
 
         return $task;
     }
+
+    /**
+     * Get profile XP record
+     * @return GenericModel
+     */
+    public function getXpRecord()
+    {
+        $oldCollection = GenericModel::getCollection();
+        GenericModel::setCollection('xp');
+
+        $profileXp = new GenericModel(['records' => []]);
+        $profileXp->save();
+        $this->profile->xp_id = $profileXp->_id;
+
+        GenericModel::setCollection($oldCollection);
+
+        return $profileXp;
+    }
+
+    public function addXpRecord(GenericModel $xpRecord, $timestamp = null)
+    {
+        if (!$timestamp) {
+            $time = new \DateTime();
+            $timestamp = $time->format('U');
+        }
+
+        $records = $xpRecord->records;
+        $records[] = [
+          'xp' => 1,
+            'details' => 'Testing XP records.',
+            'timestamp' => $timestamp
+        ];
+        $xpRecord->records = $records;
+        $xpRecord->save();
+
+        return $xpRecord;
+    }
 }
