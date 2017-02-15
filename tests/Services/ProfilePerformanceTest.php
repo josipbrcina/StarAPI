@@ -50,6 +50,8 @@ class ProfilePerformanceTest extends TestCase
                     'workSeconds' => 0,
                     'pauseSeconds' => 0,
                     'qaSeconds' => 0,
+                    'qaProgressSeconds' => 0,
+                    'qaProgressTotalSeconds' => 0,
                     'blockedSeconds' => 0,
                     'taskLastOwner' => true,
                     'taskCompleted' => false,
@@ -81,8 +83,12 @@ class ProfilePerformanceTest extends TestCase
 
         $this->assertArrayHasKey('taskCompleted', $profilePerformanceArray);
         $this->assertArrayHasKey('workSeconds', $profilePerformanceArray);
-        $this->assertArrayHasKey('qaSeconds', $profilePerformanceArray);
         $this->assertArrayHasKey('pauseSeconds', $profilePerformanceArray);
+        $this->assertArrayHasKey('qaSeconds', $profilePerformanceArray);
+        $this->assertArrayHasKey('qaProgressSeconds', $profilePerformanceArray);
+        $this->assertArrayHasKey('qaProgressTotalSeconds', $profilePerformanceArray);
+        $this->assertArrayHasKey('blockedSeconds', $profilePerformanceArray);
+
 
         $this->assertEquals(false, $profilePerformanceArray['taskCompleted']);
         $this->assertEquals($minutesWorking * 60, $profilePerformanceArray['workSeconds']);

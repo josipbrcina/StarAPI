@@ -37,8 +37,8 @@ class TaskStatusHistory
                 ];
             }
 
-            //update task_history if task is paused or resumed without submitted for QA
-            if (key_exists('paused', $newValues) && (!key_exists('submitted_for_qa', $newValues))) {
+            //update task_history if task is paused or resumed without QA in progress
+            if (key_exists('paused', $newValues) && (!key_exists('qa_progress', $newValues))) {
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),
@@ -49,30 +49,42 @@ class TaskStatusHistory
                 ];
             }
 
-            //update task_history if task is submitted for QA or if task fails QA
-            if (key_exists('submitted_for_qa', $newValues)) {
+            //update task_history if task is submitted for QA
+            if (key_exists('submitted_for_qa', $newValues) && $newValues['submitted_for_qa'] === true) {
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),
-                    'event' => $newValues['submitted_for_qa'] === true ?
-                        $taskHistoryStatuses['qa_ready']
-                        : $taskHistoryStatuses['qa_fail'],
-                    'status' => $newValues['submitted_for_qa'] === true ? 'qa_ready' : 'qa_fail'
+                    'event' => $taskHistoryStatuses['qa_ready'],
+                    'status' => 'qa_ready'
                 ];
-                //if task fails QA set task to paused and update task_history for pause
-                if ($newValues['submitted_for_qa'] === false) {
-                    $task->paused = true;
-                    $taskHistory[] = [
-                        'user' => $taskOwner->_id,
-                        'timestamp' => (int)($unixTime . '000'),
-                        'event' => str_replace('%s', 'Task failed QA', $taskHistoryStatuses['paused']),
-                        'status' => 'paused'
-                    ];
-                }
+            }
+
+            //update task_history if task is set to QA in progress
+            if (key_exists('qa_progress', $newValues) && $newValues['qa_progress'] === true) {
+                $task->submitted_for_qa = false;
+                $taskHistory[] = [
+                    'user' => $taskOwner->_id,
+                    'timestamp' => (int)($unixTime . '000'),
+                    'event' => $taskHistoryStatuses['qa_progress'],
+                    'status' => 'qa_progress'
+                ];
+
+            }
+
+            //if task fails QA set task to paused and update task_history for paused
+            if (key_exists('qa_progress', $newValues) && $newValues['qa_progress'] === false) {
+                $task->paused = true;
+                $taskHistory[] = [
+                    'user' => $taskOwner->_id,
+                    'timestamp' => (int)($unixTime . '000'),
+                    'event' => str_replace('%s', 'Task failed QA', $taskHistoryStatuses['paused']),
+                    'status' => 'paused'
+                ];
             }
 
             //update task_history if task passed QA
             if (key_exists('passed_qa', $newValues) && $newValues['passed_qa'] === true) {
+                $task->qa_progress = false;
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),

@@ -78,6 +78,8 @@ trait ProjectRelated
                 'worked' => 0,
                 'paused' => 0,
                 'qa' => 0,
+                'qa_progress' => 0,
+                'qa_progress_total' => 0,
                 'blocked' => 0,
                 'workTrackTimestamp' => $timestamp,
                 'timeAssigned' => $timestamp
@@ -103,6 +105,8 @@ trait ProjectRelated
                 'worked' => $unixNow - $timestamp,
                 'paused' => 0,
                 'qa' => 0,
+                'qa_progress' => 0,
+                'qa_progress_total' => 0,
                 'blocked' => 0,
                 'workTrackTimestamp' => (int)(new \DateTime())->format('U')
             ]

@@ -156,12 +156,18 @@ class ProfilePerformance
             $userPerformance['workSeconds'] = $stats['worked'];
             $userPerformance['pauseSeconds'] = $stats['paused'];
             $userPerformance['qaSeconds'] = $stats['qa'];
+            $userPerformance['qaProgressSeconds'] = $stats['qa_progress'];
+            $userPerformance['qaProgressTotalSeconds'] = $stats['qa_progress_total'];
             $userPerformance['blockedSeconds'] = $stats['blocked'];
 
             // Let's just add diff based of last task state against current time if task not done yet
             if (!key_exists('timeRemoved', $stats) && $userPerformance['taskCompleted'] !== true) {
                 $unixNow = (int)(new \DateTime())->format('U');
-                if ($task->paused !== true && $task->blocked !== true && $task->submitted_for_qa !== true) {
+                if ($task->paused !== true
+                    && $task->blocked !== true
+                    && $task->submitted_for_qa !== true
+                    && $task->qa_progress !== true
+                ) {
                     $userPerformance['workSeconds'] += $unixNow - $stats['workTrackTimestamp'];
                 }
                 if ($task->paused) {
@@ -169,6 +175,13 @@ class ProfilePerformance
                 }
                 if ($task->submitted_for_qa) {
                     $userPerformance['qaSeconds'] += $unixNow - $stats['workTrackTimestamp'];
+                }
+                if ($task->blocked) {
+                    $userPerformance['blockedSeconds'] += $unixNow - $stats['workTrackTimestamp'];
+                }
+                if ($task->qa_progress) {
+                    $userPerformance['qaProgressSeconds'] += $unixNow - $stats['workTrackTimestamp'];
+                    $userPerformance['qaProgressTotalSeconds'] += $unixNow - $stats['workTrackTimestamp'];
                 }
             }
 
