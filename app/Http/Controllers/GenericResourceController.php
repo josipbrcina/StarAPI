@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GenericModelArchive;
 use App\Events\GenericModelCreate;
 use App\Events\GenericModelDelete;
 use App\Events\GenericModelUpdate;
@@ -232,13 +233,17 @@ class GenericResourceController extends Controller
             return $this->jsonError(['Insufficient permissions.'], 403);
         }
 
+        //clone model and set collection to archived, leave old ID
+        $archivedCollection = $modelCollection . '_archived';
         $archivedModel = $model->replicate();
-
-        $archivedModel['collection'] = $modelCollection . '_archived';
+        $archivedModel['collection'] = $archivedCollection;
+        $archivedModel->_id = $model->id;
+        GenericModel::setCollection($archivedCollection);
 
         if ($archivedModel->save()) {
+            event(new GenericModelArchive($model));
             $model->delete();
-            return $archivedModel;
+            return $model;
         }
 
         return $this->jsonError('Issue with archiving resource.');
