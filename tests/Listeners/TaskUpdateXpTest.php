@@ -5,10 +5,11 @@ use Tests\Collections\ProjectRelated;
 use App\Profile;
 use App\Events\ModelUpdate;
 use App\Listeners\TaskUpdateXP;
+use Tests\Collections\ProfileRelated;
 
 class TaskUpdateXpTest extends TestCase
 {
-    use ProjectRelated;
+    use ProjectRelated, ProfileRelated;
 
     public function setUp()
     {

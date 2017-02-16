@@ -5,12 +5,13 @@ namespace Tests\Services;
 use App\Helpers\WorkDays;
 use App\Profile;
 use App\Services\ProfilePerformance;
+use Tests\Collections\ProfileRelated;
 use Tests\Collections\ProjectRelated;
 use Tests\TestCase;
 
 class ProfilePerformanceTest extends TestCase
 {
-    use ProjectRelated;
+    use ProjectRelated, ProfileRelated;
 
     private $projectOwner = null;
 
@@ -92,7 +93,7 @@ class ProfilePerformanceTest extends TestCase
     }
 
     /**
-     * Test profile performance XP difference output
+     * Test profile performance XP difference output for 5 days with XP record
      */
     public function testProfilePerformanceForTimeRangeXpDiff()
     {
@@ -103,31 +104,73 @@ class ProfilePerformanceTest extends TestCase
         }
 
         $pp = new ProfilePerformance();
-        //Test XP diff within time range
+        //Test XP diff within time range with XP records
         $testOne = $pp->aggregateForTimeRange($this->profile,
             \DateTime::createFromFormat('Y-m-d', $workDays[0])->format('U'),
             \DateTime::createFromFormat('Y-m-d', $workDays[4])->format('U'));
 
-        //Test XP diff within time range
+        $this->assertEquals(5, $testOne['xpDiff']);
+    }
+
+    /**
+     * Test Test profile performance XP difference output for 10 days with XP record
+     */
+    public function testProfilePerformanceForTimeRangeXpDifference()
+    {
+        $profileXpRecord = $this->getXpRecord();
+        $workDays = WorkDays::getWorkDays();
+        foreach ($workDays as $day) {
+            $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
+        }
+
+        $pp = new ProfilePerformance();
+        //Test XP diff within time range with XP records
         $testTwo = $pp->aggregateForTimeRange($this->profile,
             \DateTime::createFromFormat('Y-m-d', $workDays[6])->format('U'),
             \DateTime::createFromFormat('Y-m-d', $workDays[15])->format('U'));
 
-        //Test XP diff out of range start and end (XP records doesn't exist)
+        $this->assertEquals(10, $testTwo['xpDiff']);
+
+    }
+
+    /**
+     * Test Test profile performance XP difference for time range where there are no XP records
+     */
+    public function testProfilePerformanceForTimeRangeXpDifferenceWithNoXp()
+    {
+        $profileXpRecord = $this->getXpRecord();
+        $workDays = WorkDays::getWorkDays();
+        foreach ($workDays as $day) {
+            $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
+        }
+
+        $pp = new ProfilePerformance();
+        //Test XP diff for time range where there are no XP records
         $startTime = (new \DateTime())->modify('+50 days')->format('U');
         $endTime = (new \DateTime())->modify('+55 days')->format('U');
         $testThree = $pp->aggregateForTimeRange($this->profile, $startTime, $endTime);
 
+        $this->assertEquals(0, $testThree['xpDiff']);
+    }
 
+    /**
+     * Test Test profile performance XP difference for time range of 3 days (2 days are without XP records)
+     */
+    public function testProfilePerformanceForTimeRangeFiveDaysXpDifference()
+    {
+        $profileXpRecord = $this->getXpRecord();
+        $workDays = WorkDays::getWorkDays();
+        foreach ($workDays as $day) {
+            $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
+        }
+
+        $pp = new ProfilePerformance();
         //Test XP diff when first 2 days of check there are no xp records and 3rd day there is one record
         $twoDaysBeforeFirstWorkDay = (new \DateTime(reset($workDays)))->modify('-2 days')->format('U');
         $firstWorkDay = \DateTime::createFromFormat('Y-m-d', reset($workDays))->format('U');
 
         $testFour = $pp->aggregateForTimeRange($this->profile, $twoDaysBeforeFirstWorkDay, $firstWorkDay);
 
-        $this->assertEquals(5, $testOne['xpDiff']);
-        $this->assertEquals(10, $testTwo['xpDiff']);
-        $this->assertEquals(0, $testThree['xpDiff']);
         $this->assertEquals(1, $testFour['xpDiff']);
     }
 }

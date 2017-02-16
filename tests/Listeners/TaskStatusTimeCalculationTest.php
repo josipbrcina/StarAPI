@@ -4,13 +4,14 @@ namespace Tests\Listeners;
 
 use App\Events\TaskStatusTimeCalculation;
 use App\GenericModel;
+use Tests\Collections\ProfileRelated;
 use Tests\Collections\ProjectRelated;
 use Tests\TestCase;
 use App\Profile;
 
 class TaskStatusTimeCalculationTest extends TestCase
 {
-    use ProjectRelated;
+    use ProjectRelated, ProfileRelated;
 
     public function setUp()
     {
