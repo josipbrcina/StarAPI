@@ -111,11 +111,13 @@ class ProfilePerformanceTest extends TestCase
 
         $pp = new ProfilePerformance();
         //Test XP diff within time range with XP records
-        $testOne = $pp->aggregateForTimeRange($this->profile,
+        $out = $pp->aggregateForTimeRange(
+            $this->profile,
             \DateTime::createFromFormat('Y-m-d', $workDays[0])->format('U'),
-            \DateTime::createFromFormat('Y-m-d', $workDays[4])->format('U'));
+            \DateTime::createFromFormat('Y-m-d', $workDays[4])->format('U')
+        );
 
-        $this->assertEquals(5, $testOne['xpDiff']);
+        $this->assertEquals(5, $out['xpDiff']);
     }
 
     /**
@@ -131,12 +133,13 @@ class ProfilePerformanceTest extends TestCase
 
         $pp = new ProfilePerformance();
         //Test XP diff within time range with XP records
-        $testTwo = $pp->aggregateForTimeRange($this->profile,
+        $out = $pp->aggregateForTimeRange(
+            $this->profile,
             \DateTime::createFromFormat('Y-m-d', $workDays[6])->format('U'),
-            \DateTime::createFromFormat('Y-m-d', $workDays[15])->format('U'));
+            \DateTime::createFromFormat('Y-m-d', $workDays[15])->format('U')
+        );
 
-        $this->assertEquals(10, $testTwo['xpDiff']);
-
+        $this->assertEquals(10, $out['xpDiff']);
     }
 
     /**
@@ -154,9 +157,9 @@ class ProfilePerformanceTest extends TestCase
         //Test XP diff for time range where there are no XP records
         $startTime = (new \DateTime())->modify('+50 days')->format('U');
         $endTime = (new \DateTime())->modify('+55 days')->format('U');
-        $testThree = $pp->aggregateForTimeRange($this->profile, $startTime, $endTime);
+        $out = $pp->aggregateForTimeRange($this->profile, $startTime, $endTime);
 
-        $this->assertEquals(0, $testThree['xpDiff']);
+        $this->assertEquals(0, $out['xpDiff']);
     }
 
     /**
@@ -175,8 +178,8 @@ class ProfilePerformanceTest extends TestCase
         $twoDaysBeforeFirstWorkDay = (new \DateTime(reset($workDays)))->modify('-2 days')->format('U');
         $firstWorkDay = \DateTime::createFromFormat('Y-m-d', reset($workDays))->format('U');
 
-        $testFour = $pp->aggregateForTimeRange($this->profile, $twoDaysBeforeFirstWorkDay, $firstWorkDay);
+        $out = $pp->aggregateForTimeRange($this->profile, $twoDaysBeforeFirstWorkDay, $firstWorkDay);
 
-        $this->assertEquals(1, $testFour['xpDiff']);
+        $this->assertEquals(1, $out['xpDiff']);
     }
 }

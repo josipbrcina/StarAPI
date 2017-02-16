@@ -98,14 +98,13 @@ class ProfilePerformance
         // Let's see the XP diff within time range
         if ($profile->xp_id) {
             GenericModel::setCollection('xp');
-            $unixStartDate = Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($unixStart))->format('Y-m-d');
-            $unixEndDate = Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($unixEnd))->format('Y-m-d');
+            $unixStartDate = InputHandler::getUnixTimestamp($unixStart);
+            $unixEndDate = InputHandler::getUnixTimestamp($unixEnd);
             $xpRecord = GenericModel::find($profile->xp_id);
             if ($xpRecord) {
                 foreach ($xpRecord->records as $record) {
-                    $recordDate = Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($record['timestamp']))
-                        ->format('Y-m-d');
-                    if ($recordDate >= $unixStartDate && $recordDate <= $unixEndDate) {
+                    $recordTimestamp = InputHandler::getUnixTimestamp($record['timestamp']);
+                    if ($recordTimestamp >= $unixStartDate && $recordTimestamp <= $unixEndDate) {
                         $xpDiff += $record['xp'];
                     }
                 }
