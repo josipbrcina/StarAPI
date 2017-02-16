@@ -69,12 +69,12 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
         Route::get('{resource}', 'GenericResourceController@index')->middleware(['the-shop.genericResource', 'adapters']);
         Route::get('{resource}/archive', 'GenericResourceController@index')->middleware(['the-shop.genericResource', 'adapters']);
         Route::put('{resource}/{id}/archive', 'GenericResourceController@archive')->middleware(['the-shop.genericResource', 'adapters']);
+        Route::put('{resource}/{id}/unArchive', 'GenericResourceController@unArchive')->middleware(['the-shop.genericResource', 'adapters']);
         Route::get('{resource}/{id}', 'GenericResourceController@show')->middleware(['the-shop.genericResource', 'adapters']);
         Route::post('{resource}', 'GenericResourceController@store')->middleware(['the-shop.genericResource', 'adapters']);
         Route::put('{resource}/{id}', 'GenericResourceController@update')->middleware(['the-shop.genericResource', 'adapters']);
         Route::delete('{resource}/{id}', 'GenericResourceController@destroy')->middleware(['the-shop.genericResource', 'adapters']);
         Route::post('{resource}/register', 'GenericResourceController@store')->middleware(['the-shop.genericResource', 'adapters']);
-
     });
 });
 

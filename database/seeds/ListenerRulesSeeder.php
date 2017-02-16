@@ -81,6 +81,15 @@ namespace {
                                 'App\Listeners\ProjectArchive'
                             ]
                         ]
+                    ],
+                    [
+                        'resource' => 'projects_archived',
+                        'event' => 'archive',
+                        'listeners' => [
+                            'App\Events\ProjectArchive' => [
+                                'App\Listeners\ProjectArchive'
+                            ]
+                        ]
                     ]
                 ]
             );

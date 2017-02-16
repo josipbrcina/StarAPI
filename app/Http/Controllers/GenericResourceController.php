@@ -203,8 +203,12 @@ class GenericResourceController extends Controller
             return $this->jsonError(['Insufficient permissions.'], 403);
         }
 
+        //clone model set collection to <origin_deleted>, leave old ID
         $deletedModel = $model->replicate();
-        $deletedModel['collection'] = $modelCollection . '_deleted';
+        $deletedModel->_id = $model->_id;
+        $deletedCollection = $modelCollection . '_deleted';
+        $deletedModel['collection'] = $deletedCollection;
+        GenericModel::setCollection($deletedCollection);
 
         if ($deletedModel->save()) {
             event(new GenericModelDelete($model));
@@ -224,6 +228,10 @@ class GenericResourceController extends Controller
         $modelCollection = GenericModel::getCollection();
         $model = GenericModel::find($request->route('id'));
 
+        if (strpos($modelCollection, '_archived')) {
+            return $this->jsonError(['Model already archived.'], 403);
+        }
+
         if (!$model instanceof GenericModel) {
             return $this->jsonError(['Model not found.'], 404);
         }
@@ -233,7 +241,7 @@ class GenericResourceController extends Controller
             return $this->jsonError(['Insufficient permissions.'], 403);
         }
 
-        //clone model and set collection to archived, leave old ID
+        //clone model and set collection to <origin_archived>, leave old ID
         $archivedCollection = $modelCollection . '_archived';
         $archivedModel = $model->replicate();
         $archivedModel['collection'] = $archivedCollection;
@@ -241,12 +249,51 @@ class GenericResourceController extends Controller
         GenericModel::setCollection($archivedCollection);
 
         if ($archivedModel->save()) {
-            event(new GenericModelArchive($model));
+            event(new GenericModelArchive($archivedModel));
             $model->delete();
-            return $model;
+            return $archivedModel;
         }
 
         return $this->jsonError('Issue with archiving resource.');
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function unArchive(Request $request)
+    {
+        $modelCollection = GenericModel::getCollection();
+
+        if (!strpos($modelCollection, '_archived')) {
+            return $this->jsonError(['Collection not allowed.'], 403);
+        }
+
+        $model = GenericModel::find($request->route('id'));
+
+        if (!$model instanceof GenericModel) {
+            return $this->jsonError(['Model not found.'], 404);
+        }
+
+        $fields = $request->all();
+        if ($this->validateInputsForResource($fields, $request->route('resource'), $model) === false) {
+            return $this->jsonError(['Insufficient permissions.'], 403);
+        }
+
+        //clone model and set collection to origin, leave old ID
+        $setCollection = str_replace('_archived', "", $modelCollection);
+        $unArchivedModel = $model->replicate();
+        $unArchivedModel['collection'] = $setCollection;
+        $unArchivedModel->_id = $model->id;
+        GenericModel::setCollection($setCollection);
+
+        if ($unArchivedModel->save()) {
+            event(new GenericModelArchive($unArchivedModel));
+            $model->delete();
+            return $unArchivedModel;
+        }
+
+        return $this->jsonError('Issue with unarchiving resource.');
     }
 
     /**
