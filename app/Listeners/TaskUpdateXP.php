@@ -102,7 +102,7 @@ class TaskUpdateXP
                     $this->sendSlackMessageXpUpdated($taskOwnerProfile, $task, $xpDiff);
                 }
 
-                if ($taskDetails['qaSeconds'] > 24 * 60 * 60) {
+                if ($taskDetails['qaProgressSeconds'] > 30 * 60) {
                     $poXpDiff = -3;
                     $poMessage = 'Failed to review PR in time for ' . $taskLink;
                 } else {

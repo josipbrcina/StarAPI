@@ -76,15 +76,18 @@ class TaskStatusTimeCalculationTest extends TestCase
         $this->assertArrayHasKey('worked', $task->work[$task->owner]);
         $this->assertArrayHasKey('paused', $task->work[$task->owner]);
         $this->assertArrayHasKey('qa', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_in_progress', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_total_time', $task->work[$task->owner]);
+        $this->assertArrayHasKey('blocked', $task->work[$task->owner]);
         $this->assertArrayHasKey('workTrackTimestamp', $task->work[$task->owner]);
         $this->assertArrayHasKey('timeAssigned', $task->work[$task->owner]);
         $this->assertEquals(0, $task->work[$task->owner]['worked']);
         $this->assertEquals(0, $task->work[$task->owner]['paused']);
         $this->assertEquals(0, $task->work[$task->owner]['qa']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_total_time']);
         $this->assertEquals(0, $task->work[$task->owner]['blocked']);
-        $this->assertEquals(
-            $task->work[$task->owner]['workTrackTimestamp'],
-            $task->work[$task->owner]['timeAssigned']
+        $this->assertEquals($task->work[$task->owner]['workTrackTimestamp'], $task->work[$task->owner]['timeAssigned']
         );
     }
 
@@ -98,16 +101,20 @@ class TaskStatusTimeCalculationTest extends TestCase
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
-        $task->save();
 
         $this->assertArrayHasKey('worked', $task->work[$task->owner]);
         $this->assertArrayHasKey('paused', $task->work[$task->owner]);
         $this->assertArrayHasKey('qa', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_in_progress', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_total_time', $task->work[$task->owner]);
+        $this->assertArrayHasKey('blocked', $task->work[$task->owner]);
         $this->assertArrayHasKey('workTrackTimestamp', $task->work[$task->owner]);
         $this->assertArrayHasKey('timeAssigned', $task->work[$task->owner]);
         $this->assertEquals(0, $task->work[$task->owner]['worked']);
         $this->assertEquals(0, $task->work[$task->owner]['paused']);
         $this->assertEquals(0, $task->work[$task->owner]['qa']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_total_time']);
         $this->assertEquals(0, $task->work[$task->owner]['blocked']);
         $this->assertEquals(
             $task->work[$task->owner]['workTrackTimestamp'],
@@ -120,8 +127,9 @@ class TaskStatusTimeCalculationTest extends TestCase
      */
     public function testTaskStatusTimeCalculationForTaskReassigned()
     {
-        //assigned 30 mins ago
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
         $task->save();
         $oldOwner = $task->owner;
@@ -140,6 +148,9 @@ class TaskStatusTimeCalculationTest extends TestCase
         $this->assertArrayHasKey('worked', $task->work[$oldOwner]);
         $this->assertArrayHasKey('paused', $task->work[$oldOwner]);
         $this->assertArrayHasKey('qa', $task->work[$oldOwner]);
+        $this->assertArrayHasKey('qa_in_progress', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_total_time', $task->work[$task->owner]);
+        $this->assertArrayHasKey('blocked', $task->work[$task->owner]);
         $this->assertArrayHasKey('workTrackTimestamp', $task->work[$oldOwner]);
         $this->assertArrayHasKey('timeAssigned', $task->work[$oldOwner]);
         $this->assertArrayHasKey('timeRemoved', $task->work[$oldOwner]);
@@ -149,6 +160,8 @@ class TaskStatusTimeCalculationTest extends TestCase
         );
         $this->assertEquals(0, $task->work[$oldOwner]['paused']);
         $this->assertEquals(0, $task->work[$oldOwner]['qa']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_total_time']);
         $this->assertEquals(0, $task->work[$oldOwner]['blocked']);
         $this->assertEquals(
             $task->work[$oldOwner]['workTrackTimestamp'],
@@ -158,12 +171,17 @@ class TaskStatusTimeCalculationTest extends TestCase
         $this->assertArrayHasKey('worked', $task->work[$task->owner]);
         $this->assertArrayHasKey('paused', $task->work[$task->owner]);
         $this->assertArrayHasKey('qa', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_in_progress', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_total_time', $task->work[$task->owner]);
+        $this->assertArrayHasKey('blocked', $task->work[$task->owner]);
         $this->assertArrayHasKey('workTrackTimestamp', $task->work[$task->owner]);
         $this->assertArrayHasKey('timeAssigned', $task->work[$task->owner]);
         $this->assertArrayNotHasKey('timeRemoved', $task->work[$task->owner]);
         $this->assertEquals(0, $task->work[$task->owner]['worked']);
         $this->assertEquals(0, $task->work[$task->owner]['paused']);
         $this->assertEquals(0, $task->work[$task->owner]['qa']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_total_time']);
         $this->assertEquals(0, $task->work[$task->owner]['blocked']);
         $this->assertEquals(
             $task->work[$task->owner]['workTrackTimestamp'],
@@ -176,8 +194,9 @@ class TaskStatusTimeCalculationTest extends TestCase
      */
     public function testTaskStatusTimeCalculationForTaskPaused()
     {
-        //assigned 30 mins ago
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
         $task->save();
         $workedTimeBeforeListener = $task->work[$task->owner]['worked'];
@@ -187,7 +206,6 @@ class TaskStatusTimeCalculationTest extends TestCase
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
-        $task->save();
 
         $this->assertGreaterThan($workedTimeBeforeListener, $task->work[$task->owner]['worked']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
@@ -202,8 +220,9 @@ class TaskStatusTimeCalculationTest extends TestCase
      */
     public function testTaskStatusTimeCalculationForTaskResumed()
     {
-        //assigned 30 mins ago
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
         $task->paused = true;
         $task->save();
@@ -214,7 +233,6 @@ class TaskStatusTimeCalculationTest extends TestCase
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
-        $task->save();
 
         $this->assertGreaterThan($pausedTimeBeforeListener, $task->work[$task->owner]['paused']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
@@ -229,8 +247,9 @@ class TaskStatusTimeCalculationTest extends TestCase
      */
     public function testTaskStatusTimeCalculationForBlocked()
     {
-        //assigned 30 mins ago
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
         $task->save();
         $workedTimeBeforeListener = $task->work[$task->owner]['worked'];
@@ -240,7 +259,6 @@ class TaskStatusTimeCalculationTest extends TestCase
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
-        $task->save();
 
         $this->assertGreaterThan($workedTimeBeforeListener, $task->work[$task->owner]['worked']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
@@ -255,8 +273,9 @@ class TaskStatusTimeCalculationTest extends TestCase
      */
     public function testTaskStatusTimeCalculationForUnBlocked()
     {
-        //assigned 30 mins ago
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
         $task->blocked = true;
         $task->save();
@@ -267,7 +286,6 @@ class TaskStatusTimeCalculationTest extends TestCase
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
-        $task->save();
 
         $this->assertGreaterThan($blockedTimeBeforeListener, $task->work[$task->owner]['blocked']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
@@ -282,10 +300,12 @@ class TaskStatusTimeCalculationTest extends TestCase
      */
     public function testTaskStatusTimeCalculationForSubmittedForQa()
     {
-        //assigned 30 mins ago
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
         $task->save();
+
         $workedTimeBeforeListener = $task->work[$task->owner]['worked'];
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
@@ -293,7 +313,6 @@ class TaskStatusTimeCalculationTest extends TestCase
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
-        $task->save();
 
         $this->assertGreaterThan($workedTimeBeforeListener, $task->work[$task->owner]['worked']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
@@ -304,29 +323,63 @@ class TaskStatusTimeCalculationTest extends TestCase
     }
 
     /**
-     * Test task status time for failed QA
+     * Test task status time when task submitted for QA progress
      */
-    public function testTaskStatusTimeCalculationForFailedQa()
+    public function testTaskStatusTimeCalculationForQaProgress()
     {
-        //assigned 30 mins ago
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
         $task->submitted_for_qa = true;
         $task->save();
+
         $qaTimeBeforeListener = $task->work[$task->owner]['qa'];
+        $qaProgressTimeBeforeListener = $task->work[$task->owner]['qa_in_progress'];
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
-        $task->submitted_for_qa = false;
+        $task->qa_in_progress = true;
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
-        $task->save();
 
+        $this->assertEquals(0, $qaProgressTimeBeforeListener);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_total_time']);
         $this->assertGreaterThan($qaTimeBeforeListener, $task->work[$task->owner]['qa']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
         $this->assertEquals(
             $task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener,
             $task->work[$task->owner]['qa']
+        );
+    }
+
+    /**
+     * Test task status time for failed QA
+     */
+    public function testTaskStatusTimeCalculationForFailedQa()
+    {
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
+        $task = $this->getAssignedTask($assignedAgo);
+        $task->qa_in_progress = true;
+        $task->save();
+        $qaTimeBeforeListener = $task->work[$task->owner]['qa'];
+        $qaProgressTimeBeforeListener = $task->work[$task->owner]['qa_in_progress'];
+        $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
+
+        $task->qa_in_progress = false;
+        $event = new TaskStatusTimeCalculation($task);
+        $listener = new \App\Listeners\TaskStatusTimeCalculation();
+        $listener->handle($event);
+
+        $this->assertEquals(0, $qaTimeBeforeListener);
+        $this->assertEquals($task->work[$task->owner]['qa_in_progress'], $qaProgressTimeBeforeListener);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
+        $this->assertEquals(
+            $task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener,
+            $task->work[$task->owner]['qa_total_time']
         );
     }
 
@@ -335,12 +388,13 @@ class TaskStatusTimeCalculationTest extends TestCase
      */
     public function testTaskStatusTimeCalculationForPassedQa()
     {
-        //assigned 30 mins ago
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
-        $task->submitted_for_qa = true;
+        $task->qa_in_progress = true;
         $task->save();
-        $qaTimeBeforeListener = $task->work[$task->owner]['qa'];
+        $qaProgressTimeBeforeListener = $task->work[$task->owner]['qa'];
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
         $task->passed_qa = true;
@@ -349,12 +403,13 @@ class TaskStatusTimeCalculationTest extends TestCase
         $listener->handle($event);
         $task->save();
 
-        $this->assertGreaterThan($qaTimeBeforeListener, $task->work[$task->owner]['qa']);
+        $this->assertGreaterThan($qaProgressTimeBeforeListener, $task->work[$task->owner]['qa_in_progress']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
         $this->assertEquals(
             $task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener,
-            $task->work[$task->owner]['qa']
+            $task->work[$task->owner]['qa_in_progress']
         );
+        $this->assertEquals($task->work[$task->owner]['qa_in_progress'], $task->work[$task->owner]['qa_total_time']);
     }
 
     /**
@@ -362,8 +417,9 @@ class TaskStatusTimeCalculationTest extends TestCase
      */
     public function testTaskStatusTimeComplexFlowTaskDone()
     {
-        //assigned 30 mins ago, and then paused
-        $assignedAgo = (new \DateTime())->format('U') - 30 * 60;
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
         $task->save();
         $workedTimeBeforeListener = $task->work[$task->owner]['worked'];
@@ -415,6 +471,8 @@ class TaskStatusTimeCalculationTest extends TestCase
         $oldWorkPaused = $task->work[$oldOwner]['paused'];
         $oldWorkQa = $task->work[$oldOwner]['qa'];
         $oldWorkBlocked = $task->work[$oldOwner]['blocked'];
+        $oldWorkQaProgress = $task->work[$oldOwner]['qa_in_progress'];
+        $oldWorkQaProgressTotal = $task->work[$oldOwner]['qa_total_time'];
         $newOwner = Profile::create();
         $task->owner = $newOwner->id;
 
@@ -428,6 +486,9 @@ class TaskStatusTimeCalculationTest extends TestCase
         $this->assertArrayHasKey('worked', $task->work[$oldOwner]);
         $this->assertArrayHasKey('paused', $task->work[$oldOwner]);
         $this->assertArrayHasKey('qa', $task->work[$oldOwner]);
+        $this->assertArrayHasKey('qa_in_progress', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_total_time', $task->work[$task->owner]);
+        $this->assertArrayHasKey('blocked', $task->work[$task->owner]);
         $this->assertArrayHasKey('workTrackTimestamp', $task->work[$oldOwner]);
         $this->assertArrayHasKey('timeAssigned', $task->work[$oldOwner]);
         $this->assertArrayHasKey('timeRemoved', $task->work[$oldOwner]);
@@ -437,6 +498,8 @@ class TaskStatusTimeCalculationTest extends TestCase
         );
         $this->assertEquals($oldWorkPaused, $task->work[$oldOwner]['paused']);
         $this->assertEquals($oldWorkQa, $task->work[$oldOwner]['qa']);
+        $this->assertEquals($oldWorkQaProgress, $task->work[$oldOwner]['qa_in_progress']);
+        $this->assertEquals($oldWorkQaProgressTotal, $task->work[$oldOwner]['qa_total_time']);
         $this->assertEquals($oldWorkBlocked, $task->work[$oldOwner]['blocked']);
         $this->assertEquals(
             $task->work[$oldOwner]['workTrackTimestamp'],
@@ -446,12 +509,17 @@ class TaskStatusTimeCalculationTest extends TestCase
         $this->assertArrayHasKey('worked', $task->work[$task->owner]);
         $this->assertArrayHasKey('paused', $task->work[$task->owner]);
         $this->assertArrayHasKey('qa', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_in_progress', $task->work[$task->owner]);
+        $this->assertArrayHasKey('qa_total_time', $task->work[$task->owner]);
+        $this->assertArrayHasKey('blocked', $task->work[$task->owner]);
         $this->assertArrayHasKey('workTrackTimestamp', $task->work[$task->owner]);
         $this->assertArrayHasKey('timeAssigned', $task->work[$task->owner]);
         $this->assertArrayNotHasKey('timeRemoved', $task->work[$task->owner]);
         $this->assertEquals(0, $task->work[$task->owner]['worked']);
         $this->assertEquals(0, $task->work[$task->owner]['paused']);
         $this->assertEquals(0, $task->work[$task->owner]['qa']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_total_time']);
         $this->assertEquals(0, $task->work[$task->owner]['blocked']);
         $this->assertEquals(
             $task->work[$task->owner]['workTrackTimestamp'],
@@ -485,15 +553,19 @@ class TaskStatusTimeCalculationTest extends TestCase
         $task->work = $modifyTimeStamp;
         $task->save();
 
-        //qa failed
+        //task added to QA progress
+
         $qaTimeBeforeListener = $task->work[$task->owner]['qa'];
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
+        $task->qa_in_progress = true;
         $task->submitted_for_qa = false;
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
 
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertEquals(0, $task->work[$task->owner]['qa_total_time']);
         $this->assertGreaterThan($qaTimeBeforeListener, $task->work[$task->owner]['qa']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
         $this->assertEquals(
@@ -503,6 +575,32 @@ class TaskStatusTimeCalculationTest extends TestCase
 
         $modifyTimeStamp = $task->work;
         $modifyTimeStamp[$task->owner]['workTrackTimestamp'] = (new \DateTime())->format('U') - 9 * 60;
+        $task->work = $modifyTimeStamp;
+        $task->save();
+
+        //qa failed
+        $qaProgressTimeBeforeListener = $task->work[$task->owner]['qa_in_progress'];
+        $qaProgressTotalTimeBeforeListener = $task->work[$task->owner]['qa_total_time'];
+        $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
+
+        $task->qa_in_progress = false;
+        $event = new TaskStatusTimeCalculation($task);
+        $listener = new \App\Listeners\TaskStatusTimeCalculation();
+        $listener->handle($event);
+
+        $this->assertEquals($qaProgressTimeBeforeListener, $task->work[$task->owner]['qa_in_progress']);
+        //when task failed QA qa_in_progress should be zero
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
+        $this->assertGreaterThan($qaProgressTotalTimeBeforeListener, $task->work[$task->owner]['qa_total_time']);
+        //check QA total time when task failed QA
+        $this->assertEquals(
+            $task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener,
+            $task->work[$task->owner]['qa_total_time']
+        );
+
+        $modifyTimeStamp = $task->work;
+        $modifyTimeStamp[$task->owner]['workTrackTimestamp'] = (new \DateTime())->format('U') - 8 * 60;
         $task->work = $modifyTimeStamp;
         $task->paused = true;
         $task->save();
@@ -526,7 +624,7 @@ class TaskStatusTimeCalculationTest extends TestCase
         );
 
         $modifyTimeStamp = $task->work;
-        $modifyTimeStamp[$task->owner]['workTrackTimestamp'] = (new \DateTime())->format('U') - 7 * 60;
+        $modifyTimeStamp[$task->owner]['workTrackTimestamp'] = (new \DateTime())->format('U') - 6 * 60;
         $task->work = $modifyTimeStamp;
         $task->save();
 
@@ -549,8 +647,34 @@ class TaskStatusTimeCalculationTest extends TestCase
         $task->work = $modifyTimeStamp;
         $task->save();
 
-        //finally QA passed
+        //task added to QA progress again
+
         $qaTimeBeforeListener = $task->work[$task->owner]['qa'];
+        $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
+        $qaProgressTotalTimeBeforeListener = $task->work[$task->owner]['qa_total_time'];
+
+        $task->qa_in_progress = true;
+        $task->submitted_for_qa = false;
+        $event = new TaskStatusTimeCalculation($task);
+        $listener = new \App\Listeners\TaskStatusTimeCalculation();
+        $listener->handle($event);
+
+        $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
+        $this->assertEquals($qaProgressTotalTimeBeforeListener, $task->work[$task->owner]['qa_total_time']);
+        $this->assertGreaterThan($qaTimeBeforeListener, $task->work[$task->owner]['qa']);
+        $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
+        //check QA time
+        $this->assertEquals($task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener
+            + $qaTimeBeforeListener, $task->work[$task->owner]['qa']);
+
+        $modifyTimeStamp = $task->work;
+        $modifyTimeStamp[$task->owner]['workTrackTimestamp'] = (new \DateTime())->format('U') - 2 * 60;
+        $task->work = $modifyTimeStamp;
+        $task->save();
+
+        //finally QA passed
+        $qaProgressTimeBeforeListener = $task->work[$task->owner]['qa_in_progress'];
+        $qaProgressTotalTimeBeforeListener = $task->work[$task->owner]['qa_total_time'];
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
         $task->passed_qa = true;
@@ -558,9 +682,13 @@ class TaskStatusTimeCalculationTest extends TestCase
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
 
-        $this->assertGreaterThan($qaTimeBeforeListener, $task->work[$task->owner]['qa']);
+        $this->assertGreaterThan($qaProgressTimeBeforeListener, $task->work[$task->owner]['qa_in_progress']);
         $this->assertGreaterThan($timeStampBeforeListener, $task->work[$task->owner]['workTrackTimestamp']);
+        $this->assertGreaterThan($qaProgressTotalTimeBeforeListener, $task->work[$task->owner]['qa_total_time']);
+        //check QA total time and QA in progress time
         $this->assertEquals($task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener
-            + $qaTimeBeforeListener, $task->work[$task->owner]['qa']);
+            + $qaProgressTotalTimeBeforeListener, $task->work[$task->owner]['qa_total_time']);
+        $this->assertEquals($task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener,
+            $task->work[$task->owner]['qa_in_progress']);
     }
 }
