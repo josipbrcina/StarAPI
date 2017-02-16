@@ -6,6 +6,7 @@ use App\GenericModel;
 use App\Helpers\InputHandler;
 use App\Helpers\WorkDays;
 use App\Profile;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 
 /**
@@ -94,13 +95,18 @@ class ProfilePerformance
             }
         }
 
-        // Let's see the XP diff
+        // Let's see the XP diff within time range
         if ($profile->xp_id) {
             GenericModel::setCollection('xp');
+            $unixStartDate = InputHandler::getUnixTimestamp($unixStart);
+            $unixEndDate = InputHandler::getUnixTimestamp($unixEnd);
             $xpRecord = GenericModel::find($profile->xp_id);
             if ($xpRecord) {
                 foreach ($xpRecord->records as $record) {
-                    $xpDiff += $record['xp'];
+                    $recordTimestamp = InputHandler::getUnixTimestamp($record['timestamp']);
+                    if ($recordTimestamp >= $unixStartDate && $recordTimestamp <= $unixEndDate) {
+                        $xpDiff += $record['xp'];
+                    }
                 }
             }
         }

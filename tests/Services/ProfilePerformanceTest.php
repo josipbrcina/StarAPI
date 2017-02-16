@@ -2,14 +2,16 @@
 
 namespace Tests\Services;
 
+use App\Helpers\WorkDays;
 use App\Profile;
 use App\Services\ProfilePerformance;
+use Tests\Collections\ProfileRelated;
 use Tests\Collections\ProjectRelated;
 use Tests\TestCase;
 
 class ProfilePerformanceTest extends TestCase
 {
-    use ProjectRelated;
+    use ProjectRelated, ProfileRelated;
 
     private $projectOwner = null;
 
@@ -68,7 +70,7 @@ class ProfilePerformanceTest extends TestCase
     {
         // Assigned 5 minutes ago
         $minutesWorking = 5;
-        $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
+        $assignedAgo = (int)(new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getTaskWithJustAssignedHistory($assignedAgo);
 
         $pp = new ProfilePerformance();
@@ -94,5 +96,90 @@ class ProfilePerformanceTest extends TestCase
         $this->assertEquals($minutesWorking * 60, $profilePerformanceArray['workSeconds']);
         $this->assertEquals(0, $profilePerformanceArray['qaSeconds']);
         $this->assertEquals(0, $profilePerformanceArray['pauseSeconds']);
+    }
+
+    /**
+     * Test profile performance XP difference output for 5 days with XP record
+     */
+    public function testProfilePerformanceForTimeRangeXpDiff()
+    {
+        $profileXpRecord = $this->getXpRecord();
+        $workDays = WorkDays::getWorkDays();
+        foreach ($workDays as $day) {
+            $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
+        }
+
+        $pp = new ProfilePerformance();
+        //Test XP diff within time range with XP records
+        $out = $pp->aggregateForTimeRange(
+            $this->profile,
+            \DateTime::createFromFormat('Y-m-d', $workDays[0])->format('U'),
+            \DateTime::createFromFormat('Y-m-d', $workDays[4])->format('U')
+        );
+
+        $this->assertEquals(5, $out['xpDiff']);
+    }
+
+    /**
+     * Test Test profile performance XP difference output for 10 days with XP record
+     */
+    public function testProfilePerformanceForTimeRangeXpDifference()
+    {
+        $profileXpRecord = $this->getXpRecord();
+        $workDays = WorkDays::getWorkDays();
+        foreach ($workDays as $day) {
+            $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
+        }
+
+        $pp = new ProfilePerformance();
+        //Test XP diff within time range with XP records
+        $out = $pp->aggregateForTimeRange(
+            $this->profile,
+            \DateTime::createFromFormat('Y-m-d', $workDays[6])->format('U'),
+            \DateTime::createFromFormat('Y-m-d', $workDays[15])->format('U')
+        );
+
+        $this->assertEquals(10, $out['xpDiff']);
+    }
+
+    /**
+     * Test Test profile performance XP difference for time range where there are no XP records
+     */
+    public function testProfilePerformanceForTimeRangeXpDifferenceWithNoXp()
+    {
+        $profileXpRecord = $this->getXpRecord();
+        $workDays = WorkDays::getWorkDays();
+        foreach ($workDays as $day) {
+            $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
+        }
+
+        $pp = new ProfilePerformance();
+        //Test XP diff for time range where there are no XP records
+        $startTime = (new \DateTime())->modify('+50 days')->format('U');
+        $endTime = (new \DateTime())->modify('+55 days')->format('U');
+        $out = $pp->aggregateForTimeRange($this->profile, $startTime, $endTime);
+
+        $this->assertEquals(0, $out['xpDiff']);
+    }
+
+    /**
+     * Test Test profile performance XP difference for time range of 3 days (2 days are without XP records)
+     */
+    public function testProfilePerformanceForTimeRangeFiveDaysXpDifference()
+    {
+        $profileXpRecord = $this->getXpRecord();
+        $workDays = WorkDays::getWorkDays();
+        foreach ($workDays as $day) {
+            $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
+        }
+
+        $pp = new ProfilePerformance();
+        //Test XP diff when first 2 days of check there are no xp records and 3rd day there is one record
+        $twoDaysBeforeFirstWorkDay = (new \DateTime(reset($workDays)))->modify('-2 days')->format('U');
+        $firstWorkDay = \DateTime::createFromFormat('Y-m-d', reset($workDays))->format('U');
+
+        $out = $pp->aggregateForTimeRange($this->profile, $twoDaysBeforeFirstWorkDay, $firstWorkDay);
+
+        $this->assertEquals(1, $out['xpDiff']);
     }
 }
