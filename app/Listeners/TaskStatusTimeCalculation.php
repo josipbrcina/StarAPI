@@ -161,7 +161,11 @@ class TaskStatusTimeCalculation
                 $task->work = $work;
             }
             //when task status is passed_qa update task work timestamp
-            if (key_exists('passed_qa', $updatedFields) && $updatedFields['passed_qa'] === true) {
+            if (key_exists('passed_qa', $updatedFields)
+                && $updatedFields['passed_qa'] === true
+                && key_exists('qa_in_progress', $updatedFields)
+                && $updatedFields['qa_in_progress'] === false
+            ) {
                 $work = $task->work;
                 $calculatedTime = (int)($unixTime - $work[$task->owner]['workTrackTimestamp']);
                 $work[$task->owner]['qa_in_progress'] += $calculatedTime;
