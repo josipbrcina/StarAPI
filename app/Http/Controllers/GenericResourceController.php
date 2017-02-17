@@ -191,7 +191,6 @@ class GenericResourceController extends Controller
     public function destroy(Request $request)
     {
         $model = GenericModel::find($request->route('id'));
-        $modelCollection = GenericModel::getCollection();
 
         if (!$model instanceof GenericModel) {
             return $this->jsonError(['Model not found.'], 404);
@@ -202,12 +201,9 @@ class GenericResourceController extends Controller
             return $this->jsonError(['Insufficient permissions.'], 403);
         }
 
-        $deletedModel = $model->replicate();
-        $deletedModel['collection'] = $modelCollection . '_deleted';
-
-        if ($deletedModel->save()) {
+        $deletedModel = $model->delete();
+        if ($deletedModel) {
             event(new GenericModelDelete($model));
-            $model->delete();
             return $deletedModel;
         }
 
