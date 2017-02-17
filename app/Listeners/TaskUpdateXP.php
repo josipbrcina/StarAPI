@@ -67,10 +67,10 @@ class TaskUpdateXP
             if ($secondsWorking > 0 && $estimatedSeconds > 1) {
                 $xpDiff = 0;
                 $message = null;
-                $taskXp = (float) $taskOwnerProfile->xp <= 200 ? (float) $mappedValues['xp'] : 1.0;
+                $taskXp = (float) $mappedValues['xp'];
                 if ($taskSpeedCoefficient < 0.75) {
-                    $xpDiff = $taskXp * $profilePerformance->getDurationCoefficient($task, $taskOwnerProfile)
-                    * $this->taskPriorityCoefficient($taskOwnerProfile, $task);
+                    $xpDiff = $taskOwnerProfile->xp <= 200 ?
+                        $taskXp * $profilePerformance->getDurationCoefficient($task, $taskOwnerProfile) : $taskXp;
                     $message = 'Early task delivery: ' . $taskLink;
                 } elseif ($taskSpeedCoefficient > 1 && $taskSpeedCoefficient <= 1.1) {
                     $xpDiff = -1;
@@ -185,51 +185,5 @@ class TaskUpdateXP
             . $task->_id
             . ')';
         Slack::sendMessage($recipient, $slackMessage, Slack::HIGH_PRIORITY);
-    }
-
-    /**
-     * Calculate task priority coefficient
-     * @param Profile $taskOwner
-     * @param GenericModel $task
-     * @return float|int
-     */
-    private function taskPriorityCoefficient(Profile $taskOwner, GenericModel $task)
-    {
-        $taskPriorityCoefficient = 1;
-
-        //get all projects that user is a member of
-        $preSetcollection = GenericModel::getCollection();
-        GenericModel::setCollection('projects');
-        $taskOwnerprojects = GenericModel::whereIn('members', [$taskOwner->id])
-            ->get();
-
-        GenericModel::setCollection('tasks');
-
-        $unassignedTasksPriority = [];
-
-        //get all unassigned tasks from projects that user is a member of, and make list of tasks priority
-        foreach ($taskOwnerprojects as $project) {
-            $projectTasks = GenericModel::where('project_id', '=', $project->id)
-                ->get();
-            foreach ($projectTasks as $projectTask) {
-                if (empty($projectTask->owner) && !in_array($projectTask->priority, $unassignedTasksPriority)) {
-                    $unassignedTasksPriority[$projectTask->id] = $projectTask->priority;
-                }
-            }
-        }
-
-        //check task priority and compare with list of unassigned tasks priority and set task priority coefficient
-        if ($task->priority === 'Low'
-            && (in_array('Medium', $unassignedTasksPriority) || in_array('High', $unassignedTasksPriority))) {
-            $taskPriorityCoefficient = 0.5;
-        }
-
-        if ($task->priority === 'Medium' && in_array('High', $unassignedTasksPriority)) {
-            $taskPriorityCoefficient = 0.8;
-        }
-
-        GenericModel::setCollection($preSetcollection);
-
-        return $taskPriorityCoefficient;
     }
 }

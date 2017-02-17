@@ -223,7 +223,9 @@ class ProfilePerformance
         $estimatedHours = (float)$task->estimatedHours * 1000 / min($xp, 1000);
 
         // Award xp based on complexity
-        $xpAward = $xp <= 200 ? $taskComplexity * $estimatedHours * 10 / $xp : 0;
+        $xpAward = $xp <= 200 ? ($taskComplexity * $estimatedHours * 10 / $xp) *
+            $this->taskPriorityCoefficient($profile, $task)
+            : $this->getDurationCoefficient($task, $profile) * $this->taskPriorityCoefficient($profile, $task);
 
         $hourlyRate = Config::get('sharedSettings.internalConfiguration.hourlyRate');
 
@@ -262,6 +264,52 @@ class ProfilePerformance
         }
 
         return $profileCoefficient;
+    }
+
+    /**
+     * Calculate task priority coefficient
+     * @param Profile $taskOwner
+     * @param GenericModel $task
+     * @return float|int
+     */
+    private function taskPriorityCoefficient(Profile $taskOwner, GenericModel $task)
+    {
+        $taskPriorityCoefficient = 1;
+
+        //get all projects that user is a member of
+        $preSetcollection = GenericModel::getCollection();
+        GenericModel::setCollection('projects');
+        $taskOwnerprojects = GenericModel::whereIn('members', [$taskOwner->id])
+            ->get();
+
+        GenericModel::setCollection('tasks');
+
+        $unassignedTasksPriority = [];
+
+        //get all unassigned tasks from projects that user is a member of, and make list of tasks priority
+        foreach ($taskOwnerprojects as $project) {
+            $projectTasks = GenericModel::where('project_id', '=', $project->id)
+                ->get();
+            foreach ($projectTasks as $projectTask) {
+                if (empty($projectTask->owner) && !in_array($projectTask->priority, $unassignedTasksPriority)) {
+                    $unassignedTasksPriority[$projectTask->id] = $projectTask->priority;
+                }
+            }
+        }
+
+        //check task priority and compare with list of unassigned tasks priority and set task priority coefficient
+        if ($task->priority === 'Low'
+            && (in_array('Medium', $unassignedTasksPriority) || in_array('High', $unassignedTasksPriority))) {
+            $taskPriorityCoefficient = 0.5;
+        }
+
+        if ($task->priority === 'Medium' && in_array('High', $unassignedTasksPriority)) {
+            $taskPriorityCoefficient = 0.8;
+        }
+
+        GenericModel::setCollection($preSetcollection);
+
+        return $taskPriorityCoefficient;
     }
 
     /**
