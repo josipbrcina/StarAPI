@@ -251,6 +251,12 @@ class GenericResourceController extends Controller
      */
     public function unArchive(Request $request)
     {
+        $modelCollection = GenericModel::getCollection();
+
+        if (!strpos($modelCollection, '_archived')) {
+            return $this->jsonError(['Model collection now allowed to unArchive'], 403);
+        }
+
         $model = GenericModel::find($request->route('id'));
 
         if (!$model instanceof GenericModel) {
