@@ -253,10 +253,7 @@ class GenericResourceController extends Controller
     {
         $modelCollection = GenericModel::getCollection();
 
-        if (!strpos($modelCollection, '_archived')) {
-            return $this->jsonError(['Model collection now allowed to unArchive'], 403);
-        }
-
+        GenericModel::setCollection($modelCollection . '_archived');
         $model = GenericModel::find($request->route('id'));
 
         if (!$model instanceof GenericModel) {
