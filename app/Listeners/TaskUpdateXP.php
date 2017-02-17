@@ -67,12 +67,9 @@ class TaskUpdateXP
             if ($secondsWorking > 0 && $estimatedSeconds > 1) {
                 $xpDiff = 0;
                 $message = null;
-                $taskXp = (float) $taskOwnerProfile->xp <= 200 ? (float) $mappedValues['xp'] : 1.0;
+                $taskXp = (float) $mappedValues['xp'];
                 if ($taskSpeedCoefficient < 0.75) {
-                    $xpDiff = $taskOwnerProfile->xp <= 200 ?
-                        $taskXp * $profilePerformance->getDurationCoefficient($task, $taskOwnerProfile)
-                    : $profilePerformance->getDurationCoefficient($task, $taskOwnerProfile) *
-                        $profilePerformance->taskPriorityCoefficient($taskOwnerProfile, $task);
+                    $xpDiff = $taskXp;
                     $message = 'Early task delivery: ' . $taskLink;
                 } elseif ($taskSpeedCoefficient > 1 && $taskSpeedCoefficient <= 1.1) {
                     $xpDiff = -1;

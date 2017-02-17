@@ -283,7 +283,6 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriorityWithoutOwner->priority = 'Low';
         $taskLowPriorityWithoutOwner->save();
 
-
         // Assigned 30 minutes ago
         $minutesWorking = 30;
         $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
