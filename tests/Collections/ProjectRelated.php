@@ -7,8 +7,6 @@ use App\Profile;
 
 trait ProjectRelated
 {
-    protected $profile = null;
-
     public function setTaskOwner(Profile $owner)
     {
         $this->profile = $owner;
