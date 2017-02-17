@@ -223,9 +223,8 @@ class ProfilePerformance
         $estimatedHours = (float)$task->estimatedHours * 1000 / min($xp, 1000);
 
         // Award xp based on complexity
-        $xpAward = $xp <= 200 ? ($taskComplexity * $estimatedHours * 10 / $xp) *
-            $this->taskPriorityCoefficient($profile, $task)
-            : $this->getDurationCoefficient($task, $profile) * $this->taskPriorityCoefficient($profile, $task);
+        $xpAward = $xp <= 200 ? $taskComplexity * $estimatedHours * 10 / $xp *
+            $this->taskPriorityCoefficient($profile, $task) : 0;
 
         $hourlyRate = Config::get('sharedSettings.internalConfiguration.hourlyRate');
 
@@ -272,7 +271,7 @@ class ProfilePerformance
      * @param GenericModel $task
      * @return float|int
      */
-    private function taskPriorityCoefficient(Profile $taskOwner, GenericModel $task)
+    public function taskPriorityCoefficient(Profile $taskOwner, GenericModel $task)
     {
         $taskPriorityCoefficient = 1;
 
