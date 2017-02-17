@@ -90,4 +90,51 @@ class GenericModel extends StarModel
         }
         return $this;
     }
+
+    /**
+     * Archive model - save it to _archived collection
+     * @return \Illuminate\Database\Eloquent\Model
+     * @throws \Exception
+     */
+    public function archive()
+    {
+        if (strpos(self::getCollection(), '_archived')) {
+            throw new \Exception('Model collection now allowed to archive', 403);
+        }
+
+        $preSetCollection = self::getCollection();
+        $archivedModel = $this->replicate();
+        self::setCollection($this->collection . '_archived');
+        $archivedModel->collection = self::$collectionName;
+        $archivedModel->_id = $this->original['_id'];
+
+        if ($archivedModel->save()) {
+            $this->delete();
+            self::setCollection($preSetCollection);
+            return $archivedModel;
+        }
+    }
+
+    /**
+     * Unarchive model - return to origin collection
+     * @return \Illuminate\Database\Eloquent\Model
+     * @throws \Exception
+     */
+    public function unArchive()
+    {
+        if (!strpos(self::getCollection(), '_archived')) {
+            throw new \Exception('Model collection now allowed to unArchive', 403);
+        }
+        $preSetCollection = self::getCollection();
+        $unArchivedModel = $this->replicate();
+        self::setCollection(str_replace('_archived', "", $this->collection));
+        $unArchivedModel->collection = self::$collectionName;
+        $unArchivedModel->_id = $this->original['_id'];
+
+        if ($unArchivedModel->save()) {
+            $this->delete();
+            self::setCollection($preSetCollection);
+            return $unArchivedModel;
+        }
+    }
 }

@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Listeners;
+
 use Tests\TestCase;
 use Tests\Collections\ProjectRelated;
 use App\Profile;
@@ -24,7 +26,7 @@ class TaskUpdateXpTest extends TestCase
     {
         parent::tearDown();
 
-       $this->profile->delete();
+        $this->profile->delete();
     }
 
     //test update XP on unfinished task
@@ -73,7 +75,7 @@ class TaskUpdateXpTest extends TestCase
 
         $checkXpProfile = Profile::find($this->profile->id);
         $this->assertEquals(200.2025, $checkXpProfile->xp);
-        $this->assertEquals(true,$out);
+        $this->assertEquals(true, $out);
     }
 
     //late delivery with speedCoefficient > 1 && <= 1.1 which is -1 XP point
@@ -107,7 +109,7 @@ class TaskUpdateXpTest extends TestCase
 
         $checkXpProfile = Profile::find($this->profile->id);
         $this->assertEquals(199, $checkXpProfile->xp);
-        $this->assertEquals(true,$out);
+        $this->assertEquals(true, $out);
     }
 
     //late delivery with speedCoefficient > 1.1 && <= 1.25 which is -2 XP point
@@ -141,7 +143,7 @@ class TaskUpdateXpTest extends TestCase
 
         $checkXpProfile = Profile::find($this->profile->id);
         $this->assertEquals(198, $checkXpProfile->xp);
-        $this->assertEquals(true,$out);
+        $this->assertEquals(true, $out);
     }
 
     //late delivery with speedCoefficient > 1.25 -3 XP point
@@ -175,7 +177,7 @@ class TaskUpdateXpTest extends TestCase
 
         $checkXpProfile = Profile::find($this->profile->id);
         $this->assertEquals(197, $checkXpProfile->xp);
-        $this->assertEquals(true,$out);
+        $this->assertEquals(true, $out);
     }
 
     public function testTaskUpdateXpProjectOwnerReviewInTime()
@@ -218,8 +220,7 @@ class TaskUpdateXpTest extends TestCase
         //task done in time so task owner(admin also) get's double XP
         $checkXpProfile = Profile::find($this->profile->id);
         $this->assertEquals(200.4525, $checkXpProfile->xp);
-        $this->assertEquals(true,$out);
-
+        $this->assertEquals(true, $out);
     }
 
     public function testTaskUpdateXpProjectOwnerReviewLate()
@@ -262,7 +263,6 @@ class TaskUpdateXpTest extends TestCase
         //task owner get's XP for early delivery and xp is deducted because code note reviewed in time
         $checkXpProfile = Profile::find($this->profile->id);
         $this->assertEquals(197.2025, $checkXpProfile->xp);
-        $this->assertEquals(true,$out);
-
+        $this->assertEquals(true, $out);
     }
 }

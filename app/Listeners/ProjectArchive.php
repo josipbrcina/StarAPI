@@ -21,20 +21,9 @@ class ProjectArchive
 
         $projectSprints = GenericModel::where('project_id', '=', $project->id)->get();
 
-        //check if project is archived or unArchived to set proper collection for sprints
-        $project['collection'] === 'projects_archived' ?
-            GenericModel::setCollection('sprints_archived')
-            : GenericModel::setCollection('sprints');
-
+        //archive or unArchive project sprints
         foreach ($projectSprints as $sprint) {
-            $archivedSprint = $sprint->replicate();
-            $archivedSprint->_id = $sprint->_id;
-            $project['collection'] === 'projects_archived' ?
-                $archivedSprint['collection'] = 'sprints_archived'
-            : $archivedSprint['collection'] = 'sprints';
-            if ($archivedSprint->save()) {
-                $sprint->delete();
-            }
+            $project['collection'] === 'projects_archived' ? $sprint->archive() : $sprint->unArchive();
         }
 
         //check if project is archived or unArchived to get all tasks from proper collection
@@ -44,20 +33,9 @@ class ProjectArchive
 
         $projectTasks = GenericModel::where('project_id', '=', $project->id)->get();
 
-        //check if project is archived or unArchived to set proper collection for tasks
-        $project['collection'] === 'projects_archived' ?
-            GenericModel::setCollection('tasks_archived')
-            : GenericModel::setCollection('tasks');
-
+        //archive or unArchive project tasks
         foreach ($projectTasks as $task) {
-            $archivedTask = $task->replicate();
-            $archivedTask->_id = $task->_id;
-            $project['collection'] === 'projects_archived' ?
-                $archivedSprint['collection'] = 'tasks_archived'
-                : $archivedSprint['collection'] = 'tasks';
-            if ($archivedTask->save()) {
-                $task->delete();
-            }
+            $project['collection'] === 'projects_archived' ? $task->archive() : $task->unArchive();
         }
     }
 }

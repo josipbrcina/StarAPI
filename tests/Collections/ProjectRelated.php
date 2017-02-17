@@ -57,6 +57,24 @@ trait ProjectRelated
     }
 
     /**
+     * Get new archived project
+     * @return GenericModel
+     */
+    public function getNewArchivedProject()
+    {
+        GenericModel::setCollection('projects_archived');
+        return new GenericModel(
+            [
+                'owner' => '',
+                'paused' => false,
+                'submitted_for_qa' => false,
+                'blocked' => false,
+                'passed_qa' => false
+            ]
+        );
+    }
+
+    /**
      * Get assigned task
      * @return GenericModel
      */
