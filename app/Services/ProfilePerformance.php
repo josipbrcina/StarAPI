@@ -230,6 +230,9 @@ class ProfilePerformance
         $out = [];
         $out['xp'] = $xpAward;
         $out['payout'] = InputHandler::getFloat($hourlyRate) * $task->estimatedHours;
+        if (isset($task->noPayout) && $task->noPayout === true) {
+            $out['payout'] = 0;
+        }
         $out['estimatedHours'] = $estimatedHours;
 
         return $out;
