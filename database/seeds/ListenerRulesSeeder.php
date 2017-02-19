@@ -38,11 +38,11 @@ namespace {
                             'App\Events\TaskSettingStatus' => [
                                 'App\Listeners\TaskSettingStatus'
                             ],
-                            'App\Events\TaskStatusTimeCalculation' => [
-                                'App\Listeners\TaskStatusTimeCalculation'
-                            ],
                             'App\Events\TaskStatusHistory' => [
                                 'App\Listeners\TaskStatusHistory'
+                            ],
+                            'App\Events\TaskStatusTimeCalculation' => [
+                                'App\Listeners\TaskStatusTimeCalculation'
                             ],
                             'App\Events\ModelUpdate' => [
                                 'App\Listeners\TaskUpdateXP',
@@ -70,6 +70,24 @@ namespace {
                         'listeners' => [
                             'App\Events\ProjectDelete' => [
                                 'App\Listeners\ProjectDelete'
+                            ]
+                        ]
+                    ],
+                    [
+                        'resource' => 'projects',
+                        'event' => 'archive',
+                        'listeners' => [
+                            'App\Events\ProjectArchive' => [
+                                'App\Listeners\ProjectArchive'
+                            ]
+                        ]
+                    ],
+                    [
+                        'resource' => 'projects_archived',
+                        'event' => 'archive',
+                        'listeners' => [
+                            'App\Events\ProjectArchive' => [
+                                'App\Listeners\ProjectArchive'
                             ]
                         ]
                     ]

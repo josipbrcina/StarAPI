@@ -28,7 +28,8 @@ class Task implements AdaptersInterface
         $mappedValues = $profilePerformance->getTaskValuesForProfile($profile, $this->task);
 
         if ($mappedValues['xp'] === 0) {
-            $mappedValues['xp'] = $profilePerformance->getDurationCoefficient($this->task, $profile);
+            $mappedValues['xp'] = $profilePerformance->getDurationCoefficient($this->task, $profile) *
+            $profilePerformance->taskPriorityCoefficient($profile, $this->task);
         }
 
         $originalEstimate = $this->task->estimatedHours;

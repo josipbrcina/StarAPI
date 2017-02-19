@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GenericModelArchive;
 use App\Events\GenericModelCreate;
 use App\Events\GenericModelDelete;
 use App\Events\GenericModelUpdate;
@@ -216,7 +217,6 @@ class GenericResourceController extends Controller
      */
     public function archive(Request $request)
     {
-        $modelCollection = GenericModel::getCollection();
         $model = GenericModel::find($request->route('id'));
 
         if (!$model instanceof GenericModel) {
@@ -228,16 +228,42 @@ class GenericResourceController extends Controller
             return $this->jsonError(['Insufficient permissions.'], 403);
         }
 
-        $archivedModel = $model->replicate();
-
-        $archivedModel['collection'] = $modelCollection . '_archived';
-
-        if ($archivedModel->save()) {
-            $model->delete();
+        $archivedModel = $model->archive();
+        if ($archivedModel) {
+            event(new GenericModelArchive($archivedModel));
             return $archivedModel;
         }
 
         return $this->jsonError('Issue with archiving resource.');
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function unArchive(Request $request)
+    {
+        $modelCollection = GenericModel::getCollection();
+
+        GenericModel::setCollection($modelCollection . '_archived');
+        $model = GenericModel::find($request->route('id'));
+
+        if (!$model instanceof GenericModel) {
+            return $this->jsonError(['Model not found.'], 404);
+        }
+
+        $fields = $request->all();
+        if ($this->validateInputsForResource($fields, $request->route('resource'), $model) === false) {
+            return $this->jsonError(['Insufficient permissions.'], 403);
+        }
+
+        $unArchivedModel = $model->unArchive();
+        if ($unArchivedModel) {
+            event(new GenericModelArchive($unArchivedModel));
+            return $unArchivedModel;
+        }
+
+        return $this->jsonError('Issue with unarchiving resource.');
     }
 
     /**

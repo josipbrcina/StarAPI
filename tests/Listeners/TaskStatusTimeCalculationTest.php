@@ -4,14 +4,13 @@ namespace Tests\Listeners;
 
 use App\Events\TaskStatusTimeCalculation;
 use App\GenericModel;
-use Tests\Collections\ProfileRelated;
 use Tests\Collections\ProjectRelated;
 use Tests\TestCase;
 use App\Profile;
 
 class TaskStatusTimeCalculationTest extends TestCase
 {
-    use ProjectRelated, ProfileRelated;
+    use ProjectRelated;
 
     public function setUp()
     {
@@ -87,8 +86,7 @@ class TaskStatusTimeCalculationTest extends TestCase
         $this->assertEquals(0, $task->work[$task->owner]['qa_in_progress']);
         $this->assertEquals(0, $task->work[$task->owner]['qa_total_time']);
         $this->assertEquals(0, $task->work[$task->owner]['blocked']);
-        $this->assertEquals($task->work[$task->owner]['workTrackTimestamp'], $task->work[$task->owner]['timeAssigned']
-        );
+        $this->assertEquals($task->work[$task->owner]['workTrackTimestamp'], $task->work[$task->owner]['timeAssigned']);
     }
 
     /**
@@ -398,6 +396,7 @@ class TaskStatusTimeCalculationTest extends TestCase
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
         $task->passed_qa = true;
+        $task->qa_in_progress = false;
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
@@ -678,6 +677,7 @@ class TaskStatusTimeCalculationTest extends TestCase
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
         $task->passed_qa = true;
+        $task->qa_in_progress = false;
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
@@ -688,7 +688,9 @@ class TaskStatusTimeCalculationTest extends TestCase
         //check QA total time and QA in progress time
         $this->assertEquals($task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener
             + $qaProgressTotalTimeBeforeListener, $task->work[$task->owner]['qa_total_time']);
-        $this->assertEquals($task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener,
-            $task->work[$task->owner]['qa_in_progress']);
+        $this->assertEquals(
+            $task->work[$task->owner]['workTrackTimestamp'] - $timeStampBeforeListener,
+            $task->work[$task->owner]['qa_in_progress']
+        );
     }
 }
