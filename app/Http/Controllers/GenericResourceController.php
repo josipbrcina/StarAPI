@@ -237,7 +237,7 @@ class GenericResourceController extends Controller
             return $restoredModel;
         }
 
-        return $this->jsonError('Issue with unarchiving resource.');
+        return $this->jsonError('Issue with restoring resource.');
     }
 
     /**
