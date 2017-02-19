@@ -109,7 +109,7 @@ class GenericModel extends StarModel
         $archivedModel->_id = $this->original['_id'];
 
         if ($archivedModel->save()) {
-            $this->delete();
+            parent::delete();
             self::setCollection($preSetCollection);
             return $archivedModel;
         }
@@ -132,7 +132,7 @@ class GenericModel extends StarModel
         $unArchivedModel->_id = $this->original['_id'];
 
         if ($unArchivedModel->save()) {
-            $this->delete();
+            parent::delete();
             self::setCollection($preSetCollection);
             return $unArchivedModel;
         }
