@@ -38,11 +38,11 @@ namespace {
                             'App\Events\TaskSettingStatus' => [
                                 'App\Listeners\TaskSettingStatus'
                             ],
-                            'App\Events\TaskStatusTimeCalculation' => [
-                                'App\Listeners\TaskStatusTimeCalculation'
-                            ],
                             'App\Events\TaskStatusHistory' => [
                                 'App\Listeners\TaskStatusHistory'
+                            ],
+                            'App\Events\TaskStatusTimeCalculation' => [
+                                'App\Listeners\TaskStatusTimeCalculation'
                             ],
                             'App\Events\ModelUpdate' => [
                                 'App\Listeners\TaskUpdateXP',

@@ -4,14 +4,13 @@ namespace Tests\Listeners;
 
 use App\Events\TaskStatusTimeCalculation;
 use App\GenericModel;
-use Tests\Collections\ProfileRelated;
 use Tests\Collections\ProjectRelated;
 use Tests\TestCase;
 use App\Profile;
 
 class TaskStatusTimeCalculationTest extends TestCase
 {
-    use ProjectRelated, ProfileRelated;
+    use ProjectRelated;
 
     public function setUp()
     {
@@ -397,6 +396,7 @@ class TaskStatusTimeCalculationTest extends TestCase
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
         $task->passed_qa = true;
+        $task->qa_in_progress = false;
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);
@@ -677,6 +677,7 @@ class TaskStatusTimeCalculationTest extends TestCase
         $timeStampBeforeListener = $task->work[$task->owner]['workTrackTimestamp'];
 
         $task->passed_qa = true;
+        $task->qa_in_progress = false;
         $event = new TaskStatusTimeCalculation($task);
         $listener = new \App\Listeners\TaskStatusTimeCalculation();
         $listener->handle($event);

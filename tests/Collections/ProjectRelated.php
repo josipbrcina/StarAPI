@@ -51,7 +51,8 @@ trait ProjectRelated
                 'paused' => false,
                 'submitted_for_qa' => false,
                 'blocked' => false,
-                'passed_qa' => false
+                'passed_qa' => false,
+                'members' => []
             ]
         );
     }
