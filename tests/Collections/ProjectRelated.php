@@ -76,6 +76,24 @@ trait ProjectRelated
     }
 
     /**
+     * Get new deleted project
+     * @return GenericModel
+     */
+    public function getNewDeletedProject()
+    {
+        GenericModel::setCollection('projects_deleted');
+        return new GenericModel(
+            [
+                'owner' => '',
+                'paused' => false,
+                'submitted_for_qa' => false,
+                'blocked' => false,
+                'passed_qa' => false
+            ]
+        );
+    }
+
+    /**
      * Get assigned task
      * @return GenericModel
      */
