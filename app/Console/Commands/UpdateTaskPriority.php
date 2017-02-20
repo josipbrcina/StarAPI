@@ -6,6 +6,8 @@ use App\GenericModel;
 use App\Helpers\InputHandler;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use App\Profile;
+use App\Helpers\Slack;
 
 class UpdateTaskPriority extends Command
 {
@@ -63,6 +65,7 @@ class UpdateTaskPriority extends Command
                     } else {
                         $tasksBumpedPerProject[$task->project_id]['High']++;
                     }
+                    $this->info('HIGH');
                 }
                 /*check if task due_date is between next 7 - 14 days and switch task priority to Medium if not set
                  already*/
@@ -75,11 +78,47 @@ class UpdateTaskPriority extends Command
                     } else {
                         $tasksBumpedPerProject[$task->project_id]['Medium']++;
                     }
+                    $this->info('MEDIUM');
                 }
             }
         }
 
-        print_r($tasksBumpedPerProject);
+        $projectOwnerIds = [];
+        $projects = [];
+
+        //Get all tasks projects and project owner IDs
+        GenericModel::setCollection('projects');
+        foreach ($tasksBumpedPerProject as $projectId => $count) {
+            $project = GenericModel::where('_id', '=', $projectId)->first();
+            $projects[$projectId] = $project;
+            if ($project->acceptedBy) {
+                $projectOwnerIds[] = $project->acceptedBy;
+            }
+        }
+
+        $recipients = Profile::all();
+
+        //send slack notification to all admins and POs about task priority change
+        foreach ($recipients as $recipient) {
+            if ($recipient->admin === true || in_array($recipient->id, $projectOwnerIds) && $recipient->slack) {
+                foreach ($projects as $projectToNotify) {
+                    if ($recipient->admin !== true && $recipient->id !== $projectToNotify->acceptedBy) {
+                        continue;
+                    }
+                    $sendTo = '@' . $recipient->slack;
+                    $message =
+                        'On project *'
+                        . $projectToNotify->name
+                        . '*, there are *'
+                        . $tasksBumpedPerProject[$projectToNotify->id]['High']
+                        . '* tasks bumped to *High priority* '
+                        . 'and *'
+                        . $tasksBumpedPerProject[$projectToNotify->id]['Medium']
+                        . '* bumped to *Medium priority*';
+                    Slack::sendMessage($sendTo, $message, Slack::LOW_PRIORITY);
+                }
+            }
+        }
 
         GenericModel::setCollection($preSetCollection);
     }
