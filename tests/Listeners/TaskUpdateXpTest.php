@@ -190,8 +190,7 @@ class TaskUpdateXpTest extends TestCase
         $minutesWorking = 30;
         $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
-
-
+        
         $task->estimatedHours = 0.6;
         $task->complexity = 5;
         $task->project_id = $project->id;
@@ -233,7 +232,6 @@ class TaskUpdateXpTest extends TestCase
         $minutesWorking = 30;
         $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
-
 
         $task->estimatedHours = 0.6;
         $task->complexity = 5;
@@ -282,7 +280,6 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriorityWithoutOwner->project_id = $project->id;
         $taskLowPriorityWithoutOwner->priority = 'Low';
         $taskLowPriorityWithoutOwner->save();
-
 
         // Assigned 30 minutes ago
         $minutesWorking = 30;
@@ -388,7 +385,6 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriorityWithoutOwner->priority = 'Low';
         $taskLowPriorityWithoutOwner->save();
 
-
         // Assigned 30 minutes ago
         $minutesWorking = 30;
         $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
@@ -443,7 +439,6 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriorityWithoutOwner->priority = 'Medium';
         $taskMediumPriorityWithoutOwner->save();
 
-
         // Assigned 30 minutes ago
         $minutesWorking = 30;
         $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
@@ -497,7 +492,6 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriorityWithoutOwner->project_id = $project->id;
         $taskMediumPriorityWithoutOwner->priority = 'Medium';
         $taskMediumPriorityWithoutOwner->save();
-
 
         // Assigned 30 minutes ago
         $minutesWorking = 30;
