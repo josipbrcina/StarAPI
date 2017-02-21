@@ -65,9 +65,8 @@ class UpdateTaskPriority extends Command
                     } else {
                         $tasksBumpedPerProject[$task->project_id]['High']++;
                     }
-                    $this->info('HIGH');
                 }
-                /*check if task due_date is between next 7 - 14 days and switch task priority to Medium if not set
+                /*check if task due_date is between next 8 - 14 days and switch task priority to Medium if not set
                  already*/
                 if ($taskDueDate > $unixTime7Days && $taskDueDate <= $unixTime14Days && $task->priority !== 'Medium') {
                     $task->priority = 'Medium';

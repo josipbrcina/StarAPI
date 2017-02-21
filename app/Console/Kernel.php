@@ -24,6 +24,7 @@ class Kernel extends ConsoleKernel
         Commands\NotifyAdminsTaskDeadline::class,
         Commands\SlackSendMessages::class,
         Commands\UpdateTaskPriority::class,
+        Commands\NotifyAdminsTaskPriority::class,
     ];
 
     /**
