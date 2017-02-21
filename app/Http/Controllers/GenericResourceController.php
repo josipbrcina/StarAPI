@@ -204,11 +204,40 @@ class GenericResourceController extends Controller
 
         $deletedModel = $model->delete();
         if ($deletedModel) {
-            event(new GenericModelDelete($model));
+            event(new GenericModelDelete($deletedModel));
             return $deletedModel;
         }
 
         return $this->jsonError('Issue with deleting resource.');
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function restore(Request $request)
+    {
+        $modelCollection = GenericModel::getCollection();
+
+        GenericModel::setCollection($modelCollection . '_deleted');
+        $model = GenericModel::find($request->route('id'));
+
+        if (!$model instanceof GenericModel) {
+            return $this->jsonError(['Model not found.'], 404);
+        }
+
+        $fields = $request->all();
+        if ($this->validateInputsForResource($fields, $request->route('resource'), $model) === false) {
+            return $this->jsonError(['Insufficient permissions.'], 403);
+        }
+
+        $restoredModel = $model->restore();
+        if ($restoredModel) {
+            event(new GenericModelDelete($restoredModel));
+            return $restoredModel;
+        }
+
+        return $this->jsonError('Issue with restoring resource.');
     }
 
     /**
