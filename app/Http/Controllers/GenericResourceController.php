@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GenericModelArchive;
 use App\Events\GenericModelCreate;
 use App\Events\GenericModelDelete;
 use App\Events\GenericModelUpdate;
@@ -191,7 +192,6 @@ class GenericResourceController extends Controller
     public function destroy(Request $request)
     {
         $model = GenericModel::find($request->route('id'));
-        $modelCollection = GenericModel::getCollection();
 
         if (!$model instanceof GenericModel) {
             return $this->jsonError(['Model not found.'], 404);
@@ -202,12 +202,9 @@ class GenericResourceController extends Controller
             return $this->jsonError(['Insufficient permissions.'], 403);
         }
 
-        $deletedModel = $model->replicate();
-        $deletedModel['collection'] = $modelCollection . '_deleted';
-
-        if ($deletedModel->save()) {
-            event(new GenericModelDelete($model));
-            $model->delete();
+        $deletedModel = $model->delete();
+        if ($deletedModel) {
+            event(new GenericModelDelete($deletedModel));
             return $deletedModel;
         }
 
@@ -216,11 +213,13 @@ class GenericResourceController extends Controller
 
     /**
      * @param Request $request
-     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function archive(Request $request)
+    public function restore(Request $request)
     {
         $modelCollection = GenericModel::getCollection();
+
+        GenericModel::setCollection($modelCollection . '_deleted');
         $model = GenericModel::find($request->route('id'));
 
         if (!$model instanceof GenericModel) {
@@ -232,16 +231,68 @@ class GenericResourceController extends Controller
             return $this->jsonError(['Insufficient permissions.'], 403);
         }
 
-        $archivedModel = $model->replicate();
+        $restoredModel = $model->restore();
+        if ($restoredModel) {
+            event(new GenericModelDelete($restoredModel));
+            return $restoredModel;
+        }
 
-        $archivedModel['collection'] = $modelCollection . '_archived';
+        return $this->jsonError('Issue with restoring resource.');
+    }
 
-        if ($archivedModel->save()) {
-            $model->delete();
+    /**
+     * @param Request $request
+     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Http\JsonResponse
+     */
+    public function archive(Request $request)
+    {
+        $model = GenericModel::find($request->route('id'));
+
+        if (!$model instanceof GenericModel) {
+            return $this->jsonError(['Model not found.'], 404);
+        }
+
+        $fields = $request->all();
+        if ($this->validateInputsForResource($fields, $request->route('resource'), $model) === false) {
+            return $this->jsonError(['Insufficient permissions.'], 403);
+        }
+
+        $archivedModel = $model->archive();
+        if ($archivedModel) {
+            event(new GenericModelArchive($archivedModel));
             return $archivedModel;
         }
 
         return $this->jsonError('Issue with archiving resource.');
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function unArchive(Request $request)
+    {
+        $modelCollection = GenericModel::getCollection();
+
+        GenericModel::setCollection($modelCollection . '_archived');
+        $model = GenericModel::find($request->route('id'));
+
+        if (!$model instanceof GenericModel) {
+            return $this->jsonError(['Model not found.'], 404);
+        }
+
+        $fields = $request->all();
+        if ($this->validateInputsForResource($fields, $request->route('resource'), $model) === false) {
+            return $this->jsonError(['Insufficient permissions.'], 403);
+        }
+
+        $unArchivedModel = $model->unArchive();
+        if ($unArchivedModel) {
+            event(new GenericModelArchive($unArchivedModel));
+            return $unArchivedModel;
+        }
+
+        return $this->jsonError('Issue with unarchiving resource.');
     }
 
     /**

@@ -72,6 +72,33 @@ namespace {
                                 'App\Listeners\ProjectDelete'
                             ]
                         ]
+                    ],
+                    [
+                        'resource' => 'projects_deleted',
+                        'event' => 'delete',
+                        'listeners' => [
+                            'App\Events\ProjectDelete' => [
+                                'App\Listeners\ProjectDelete'
+                            ]
+                        ]
+                    ],
+                    [
+                        'resource' => 'projects',
+                        'event' => 'archive',
+                        'listeners' => [
+                            'App\Events\ProjectArchive' => [
+                                'App\Listeners\ProjectArchive'
+                            ]
+                        ]
+                    ],
+                    [
+                        'resource' => 'projects_archived',
+                        'event' => 'archive',
+                        'listeners' => [
+                            'App\Events\ProjectArchive' => [
+                                'App\Listeners\ProjectArchive'
+                            ]
+                        ]
                     ]
                 ]
             );

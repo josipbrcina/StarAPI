@@ -14,27 +14,28 @@ class ProjectDelete
     {
         $project = $event->model;
 
-        $preSetCollection = GenericModel::getCollection();
-        //delete all project sprints
-        GenericModel::setCollection('sprints');
-            $projectSprints = GenericModel::where('project_id', '=', $project->id)->get();
+        //check if project is deleted or restored to get all sprints from proper collection
+        $project['collection'] === 'projects_deleted' ?
+            GenericModel::setCollection('sprints')
+            : GenericModel::setCollection('sprints_deleted');
+
+        $projectSprints = GenericModel::where('project_id', '=', $project->id)->get();
+
+        //delete or restore project sprints
         foreach ($projectSprints as $sprint) {
-            $deletedSprint = $sprint->replicate();
-            $deletedSprint['collection'] = 'sprints_deleted';
-            if ($deletedSprint->save()) {
-                $sprint->delete();
-            }
+            $project['collection'] === 'projects_deleted' ? $sprint->delete() : $sprint->restore();
         }
-        //delete all project tasks
-        GenericModel::setCollection('tasks');
+
+        //check if project is deleted or restored to get all tasks from proper collection
+        $project['collection'] === 'projects_deleted' ?
+            GenericModel::setCollection('tasks')
+            : GenericModel::setCollection('tasks_deleted');
+
         $projectTasks = GenericModel::where('project_id', '=', $project->id)->get();
+
+        //delete or restore project tasks
         foreach ($projectTasks as $task) {
-            $deletedTask = $task->replicate();
-            $deletedTask['collection'] = 'tasks_deleted';
-            if ($deletedTask->save()) {
-                $task->delete();
-            }
+            $project['collection'] === 'projects_deleted' ? $task->delete() : $task->restore();
         }
-        GenericModel::setCollection($preSetCollection);
     }
 }

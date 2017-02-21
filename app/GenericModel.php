@@ -90,4 +90,100 @@ class GenericModel extends StarModel
         }
         return $this;
     }
+
+    /**
+     * Archive model - save it to {resource}_archived collection
+     * @return \Illuminate\Database\Eloquent\Model
+     * @throws \Exception
+     */
+    public function archive()
+    {
+        if (strpos(self::getCollection(), '_archived')) {
+            throw new \Exception('Model collection now allowed to archive', 403);
+        }
+
+        $preSetCollection = self::getCollection();
+        $archivedModel = $this->replicate();
+        self::setCollection($this->collection . '_archived');
+        $archivedModel->collection = self::$collectionName;
+        $archivedModel->_id = $this->original['_id'];
+
+        if ($archivedModel->save()) {
+            parent::delete();
+            self::setCollection($preSetCollection);
+            return $archivedModel;
+        }
+    }
+
+    /**
+     * Unarchive model - return to origin collection
+     * @return \Illuminate\Database\Eloquent\Model
+     * @throws \Exception
+     */
+    public function unArchive()
+    {
+        if (!strpos(self::getCollection(), '_archived')) {
+            throw new \Exception('Model collection now allowed to unArchive', 403);
+        }
+
+        $preSetCollection = self::getCollection();
+        $unArchivedModel = $this->replicate();
+        self::setCollection(str_replace('_archived', "", $this->collection));
+        $unArchivedModel->collection = self::$collectionName;
+        $unArchivedModel->_id = $this->original['_id'];
+
+        if ($unArchivedModel->save()) {
+            parent::delete();
+            self::setCollection($preSetCollection);
+            return $unArchivedModel;
+        }
+    }
+
+    /**
+     * Delete model - save it to {resource}_deleted collection
+     * @return \Illuminate\Database\Eloquent\Model
+     * @throws \Exception
+     */
+    public function delete()
+    {
+        if (strpos(self::getCollection(), '_deleted')) {
+            throw new \Exception('Model collection now allowed to delete', 403);
+        }
+
+        $preSetCollection = self::getCollection();
+        $deletedModel = $this->replicate();
+        self::setCollection($this->collection . '_deleted');
+        $deletedModel->collection = self::$collectionName;
+        $deletedModel->_id = $this->original['_id'];
+
+        if ($deletedModel->save()) {
+            parent::delete();
+            self::setCollection($preSetCollection);
+            return $deletedModel;
+        }
+    }
+
+    /**
+     * Restore model - return to origin collection
+     * @return \Illuminate\Database\Eloquent\Model
+     * @throws \Exception
+     */
+    public function restore()
+    {
+        if (!strpos(self::getCollection(), '_deleted')) {
+            throw new \Exception('Model collection now allowed to restore', 403);
+        }
+
+        $preSetCollection = self::getCollection();
+        $restoredModel = $this->replicate();
+        self::setCollection(str_replace('_deleted', "", $this->collection));
+        $restoredModel->collection = self::$collectionName;
+        $restoredModel->_id = $this->original['_id'];
+
+        if ($restoredModel->save()) {
+            parent::delete();
+            self::setCollection($preSetCollection);
+            return $restoredModel;
+        }
+    }
 }
