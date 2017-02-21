@@ -22,7 +22,7 @@ class NotifyAdminsTaskDeadline extends Command
      *
      * @var string
      */
-    protected $description = 'Ping admins / PO on slack about approaching task deadline 2 days before deadline';
+    protected $description = 'Ping admins / PO on slack about approaching task deadline 7 days before deadline';
 
     /**
      * Execute the console command.
@@ -35,10 +35,10 @@ class NotifyAdminsTaskDeadline extends Command
         $tasks = GenericModel::all();
 
         $unixDateNow = (new \DateTime())->format('U');
-        $unixTwoDaysFromNow = $unixDateNow + 48 * 60 * 60;
-        $twoDaysFromNowDate = \DateTime::createFromFormat('U', $unixTwoDaysFromNow)->format('Y-m-d');
+        $unixSevenDaysFromNow = (int) ($unixDateNow) + 24 * 7 * 60 * 60;
+        $sevenDaysFromNowDate = \DateTime::createFromFormat('U', $unixSevenDaysFromNow)->format('Y-m-d');
         foreach ($tasks as $task) {
-            if (!empty($task->due_date) && $twoDaysFromNowDate
+            if (!empty($task->due_date) && $sevenDaysFromNowDate
                 === \DateTime::createFromFormat('U', InputHandler::getUnixTimestamp($task->due_date))->format('Y-m-d')
             ) {
                 GenericModel::setCollection('projects');
@@ -56,7 +56,7 @@ class NotifyAdminsTaskDeadline extends Command
                             . $task->title
                             . '* on project *'
                             . $taskProject->name
-                            . '* deadline is in *2 days* '
+                            . '* deadline is in *7 days* '
                             . '(*'
                             . $taskDueDate
                             . '*)';

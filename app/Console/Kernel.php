@@ -69,5 +69,9 @@ class Kernel extends ConsoleKernel
         //Check task deadline and update priority
         $schedule->command('update:task:priority')
             ->dailyAt('07:00');
+
+        //Check task deadlines based on priority and ping admins
+        $schedule->command('ping:admins:task:priority')
+            ->dailyAt('07:00');
     }
 }
