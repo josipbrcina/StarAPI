@@ -165,6 +165,7 @@ class ProfilePerformance
             $userPerformance['qaProgressSeconds'] = $stats['qa_in_progress'];
             $userPerformance['qaProgressTotalSeconds'] = $stats['qa_total_time'];
             $userPerformance['blockedSeconds'] = $stats['blocked'];
+            $userPerformance['workTrackTimestamp'] = $stats['workTrackTimestamp'];
 
             // Let's just add diff based of last task state against current time if task not done yet
             if (!key_exists('timeRemoved', $stats) && $userPerformance['taskCompleted'] !== true) {
@@ -222,12 +223,17 @@ class ProfilePerformance
 
         $estimatedHours = (float)$task->estimatedHours * 1000 / min($xp, 1000);
 
-        // Award xp based on complexity
+        // Award xp based on complexity, task priority and duration coefficient
+        $taskPriorityCoefficient = null;
+        if (isset($task->priorityCoefficient)) {
+            $taskPriorityCoefficient = $task->priorityCoefficient;
+        } else {
+            $taskPriorityCoefficient = $this->taskPriorityCoefficient($profile, $task);
+        }
+
         $xpAward = $xp <= 200 ? $taskComplexity * $estimatedHours * 10 / $xp *
-            $this->taskPriorityCoefficient($profile, $task)
-            * $this->getDurationCoefficient($task, $profile, $estimatedHours) :
-            $this->taskPriorityCoefficient($profile, $task)
-            * $this->getDurationCoefficient($task, $profile, $estimatedHours);
+            $taskPriorityCoefficient * $this->getDurationCoefficient($profile, $estimatedHours) :
+            $taskPriorityCoefficient * $this->getDurationCoefficient($profile, $estimatedHours);
 
         $hourlyRate = Config::get('sharedSettings.internalConfiguration.hourlyRate');
 
@@ -243,46 +249,19 @@ class ProfilePerformance
     }
 
     /**
-     * @param GenericModel $task
-     * @param Profile $taskOwner
-     * @return float|int
-     */
-    private function getDurationCoefficient(GenericModel $task, Profile $taskOwner, $estimatedHours)
-    {
-        $profileCoefficient = 0.9;
-        if ((float)$taskOwner->xp > 200 && (float)$taskOwner->xp <= 400) {
-            $profileCoefficient = 0.8;
-        } elseif ((float)$taskOwner->xp > 400 && (float)$taskOwner->xp <= 600) {
-            $profileCoefficient = 0.6;
-        } elseif ((float)$taskOwner->xp > 600 && (float)$taskOwner->xp <= 800) {
-            $profileCoefficient = 0.4;
-        } elseif ((float)$taskOwner->xp > 800 && (float)$taskOwner->xp <= 1000) {
-            $profileCoefficient = 0.2;
-        } elseif ((float)$taskOwner->xp > 1000) {
-            $profileCoefficient = 0.1;
-        }
-
-        if ((int) $estimatedHours < 10) {
-            return ((int) $estimatedHours / 10) * $profileCoefficient;
-        }
-
-        return $profileCoefficient;
-    }
-
-    /**
      * Calculate task priority coefficient
      * @param Profile $taskOwner
      * @param GenericModel $task
      * @return float|int
      */
-    private function taskPriorityCoefficient(Profile $taskOwner, GenericModel $task)
+    public function taskPriorityCoefficient(Profile $taskOwner, GenericModel $task)
     {
         $taskPriorityCoefficient = 1;
 
         //get all projects that user is a member of
-        $preSetcollection = GenericModel::getCollection();
+        $preSetCollection = GenericModel::getCollection();
         GenericModel::setCollection('projects');
-        $taskOwnerprojects = GenericModel::whereIn('members', [$taskOwner->id])
+        $taskOwnerProjects = GenericModel::whereIn('members', [$taskOwner->id])
             ->get();
 
         GenericModel::setCollection('tasks');
@@ -290,7 +269,7 @@ class ProfilePerformance
         $unassignedTasksPriority = [];
 
         //get all unassigned tasks from projects that user is a member of, and make list of tasks priority
-        foreach ($taskOwnerprojects as $project) {
+        foreach ($taskOwnerProjects as $project) {
             $projectTasks = GenericModel::where('project_id', '=', $project->id)
                 ->get();
             foreach ($projectTasks as $projectTask) {
@@ -310,9 +289,36 @@ class ProfilePerformance
             $taskPriorityCoefficient = 0.8;
         }
 
-        GenericModel::setCollection($preSetcollection);
+        GenericModel::setCollection($preSetCollection);
 
         return $taskPriorityCoefficient;
+    }
+
+    /**
+     * @param Profile $taskOwner
+     * @param $estimatedHours
+     * @return float|int
+     */
+    private function getDurationCoefficient(Profile $taskOwner, $estimatedHours)
+    {
+        $profileCoefficient = 0.9;
+        if ((float)$taskOwner->xp > 200 && (float)$taskOwner->xp <= 400) {
+            $profileCoefficient = 0.8;
+        } elseif ((float)$taskOwner->xp > 400 && (float)$taskOwner->xp <= 600) {
+            $profileCoefficient = 0.6;
+        } elseif ((float)$taskOwner->xp > 600 && (float)$taskOwner->xp <= 800) {
+            $profileCoefficient = 0.4;
+        } elseif ((float)$taskOwner->xp > 800 && (float)$taskOwner->xp <= 1000) {
+            $profileCoefficient = 0.2;
+        } elseif ((float)$taskOwner->xp > 1000) {
+            $profileCoefficient = 0.1;
+        }
+
+        if ((int) $estimatedHours < 10) {
+            return ((int) $estimatedHours / 10) * $profileCoefficient;
+        }
+
+        return $profileCoefficient;
     }
 
     /**

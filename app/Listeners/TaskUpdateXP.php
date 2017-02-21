@@ -9,6 +9,7 @@ use App\Helpers\Slack;
 use App\Profile;
 use App\Services\ProfilePerformance;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Input;
 
 /**
  * Class TaskUpdateXP
@@ -43,13 +44,6 @@ class TaskUpdateXP
 
             GenericModel::setCollection('tasks');
             $mappedValues = $profilePerformance->getTaskValuesForProfile($taskOwnerProfile, $task);
-            GenericModel::setCollection('projects');
-
-            $estimatedSeconds = max(InputHandler::getFloat($mappedValues['estimatedHours']) * 60 * 60, 1);
-
-            $secondsWorking = $taskDetails['workSeconds'];
-
-            $taskSpeedCoefficient = $secondsWorking / $estimatedSeconds;
 
             $webDomain = Config::get('sharedSettings.internalConfiguration.webDomain');
             $taskLink = '['
@@ -64,76 +58,65 @@ class TaskUpdateXP
                 . $task->_id
                 . ')';
 
-            if ($secondsWorking > 0 && $estimatedSeconds > 1) {
-                $xpDiff = 0;
-                $message = null;
-                $taskXp = (float) $mappedValues['xp'];
-                if ($taskSpeedCoefficient < 0.75) {
-                    $xpDiff = $taskXp;
-                    $message = 'Early task delivery: ' . $taskLink;
-                } elseif ($taskSpeedCoefficient > 1 && $taskSpeedCoefficient <= 1.1) {
-                    $xpDiff = -1;
-                    $message = 'Late task delivery: ' . $taskLink;
-                } elseif ($taskSpeedCoefficient > 1.1 && $taskSpeedCoefficient <= 1.25) {
-                    $xpDiff = -2;
-                    $message = 'Late task delivery: ' . $taskLink;
-                } elseif ($taskSpeedCoefficient > 1.25) {
-                    $xpDiff = -3;
-                    $message = 'Late task delivery: ' . $taskLink;
-                } else {
-                    // TODO: handle properly
-                }
+            $taskXp = (float) $mappedValues['xp'];
+            if (InputHandler::getUnixTimestamp($taskDetails['workTrackTimestamp'])
+                <= InputHandler::getUnixTimestamp($task->due_date)) {
+                $xpDiff = $taskXp;
+                $message = 'Task Delivered on time: ' . $taskLink;
+            } else {
+                $xpDiff = -5;
+                $message = 'Late task delivery: ' . $taskLink;
+            }
 
-                if ($xpDiff !== 0) {
-                    $profileXpRecord = $this->getXpRecord($taskOwnerProfile);
+            if ($xpDiff !== 0) {
+                $profileXpRecord = $this->getXpRecord($taskOwnerProfile);
 
-                    $records = $profileXpRecord->records;
-                    $records[] = [
-                        'xp' => $xpDiff,
-                        'details' => $message,
-                        'timestamp' => (int) ((new \DateTime())->format('U') . '000') // Microtime
-                    ];
-                    $profileXpRecord->records = $records;
-                    $profileXpRecord->save();
+                $records = $profileXpRecord->records;
+                $records[] = [
+                    'xp' => $xpDiff,
+                    'details' => $message,
+                    'timestamp' => (int) ((new \DateTime())->format('U') . '000') // Microtime
+                ];
+                $profileXpRecord->records = $records;
+                $profileXpRecord->save();
 
-                    $taskOwnerProfile->xp += $xpDiff;
-                    $taskOwnerProfile->save();
+                $taskOwnerProfile->xp += $xpDiff;
+                $taskOwnerProfile->save();
 
-                    $this->sendSlackMessageXpUpdated($taskOwnerProfile, $task, $xpDiff);
-                }
+                $this->sendSlackMessageXpUpdated($taskOwnerProfile, $task, $xpDiff);
+            }
 
-                if ($taskDetails['qaProgressSeconds'] > 30 * 60) {
-                    $poXpDiff = -3;
-                    $poMessage = 'Failed to review PR in time for ' . $taskLink;
-                } else {
-                    $poXpDiff = 0.25;
-                    $poMessage = 'Review PR in time for ' . $taskLink;
-                }
+            if ($taskDetails['qaProgressSeconds'] > 30 * 60) {
+                $poXpDiff = -3;
+                $poMessage = 'Failed to review PR in time for ' . $taskLink;
+            } else {
+                $poXpDiff = 0.25;
+                $poMessage = 'Review PR in time for ' . $taskLink;
+            }
 
-                // Get project owner id
-                GenericModel::setCollection('projects');
-                $project = GenericModel::find($task->project_id);
-                $projectOwner = null;
-                if ($project) {
-                    $projectOwner = Profile::find($project->acceptedBy);
-                }
+            // Get project owner id
+            GenericModel::setCollection('projects');
+            $project = GenericModel::find($task->project_id);
+            $projectOwner = null;
+            if ($project) {
+                $projectOwner = Profile::find($project->acceptedBy);
+            }
 
-                if ($projectOwner) {
-                    $projectOwnerXpRecord = $this->getXpRecord($projectOwner);
-                    $records = $projectOwnerXpRecord->records;
-                    $records[] = [
-                        'xp' => $poXpDiff,
-                        'details' => $poMessage,
-                        'timestamp' => (int) ((new \DateTime())->format('U') . '000') // Microtime
-                    ];
-                    $projectOwnerXpRecord->records = $records;
-                    $projectOwnerXpRecord->save();
+            if ($projectOwner) {
+                $projectOwnerXpRecord = $this->getXpRecord($projectOwner);
+                $records = $projectOwnerXpRecord->records;
+                $records[] = [
+                    'xp' => $poXpDiff,
+                    'details' => $poMessage,
+                    'timestamp' => (int) ((new \DateTime())->format('U') . '000') // Microtime
+                ];
+                $projectOwnerXpRecord->records = $records;
+                $projectOwnerXpRecord->save();
 
-                    $projectOwner->xp += $poXpDiff;
-                    $projectOwner->save();
+                $projectOwner->xp += $poXpDiff;
+                $projectOwner->save();
 
-                    $this->sendSlackMessageXpUpdated($projectOwner, $task, $poXpDiff);
-                }
+                $this->sendSlackMessageXpUpdated($projectOwner, $task, $poXpDiff);
             }
         }
 

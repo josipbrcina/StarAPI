@@ -11,6 +11,10 @@ use App\Helpers\Slack;
 
 class NotifyAdminsTaskPriority extends Command
 {
+    const HIGH = 'High';
+    const MEDIUM = 'Medium';
+    const LOW = 'Low';
+
     /**
      * The name and signature of the console command.
      *
@@ -59,36 +63,34 @@ class NotifyAdminsTaskPriority extends Command
             if (empty($task->owner)) {
                 $taskDueDate = InputHandler::getUnixTimestamp($task->due_date);
                 //get task if task priority is High and due_date is in next 2 days
-                if ($taskDueDate >= $unixTimeNow && $taskDueDate <= $unixTime2Days && $task->priority === 'High') {
+                if ($taskDueDate >= $unixTimeNow && $taskDueDate <= $unixTime2Days && $task->priority === self::HIGH) {
                     $tasksDueDateNextTwoDays[$task->project_id][] = $task;
                 }
 
                 //check if task priority is High and due_date is between next 2-7 days, add counter
-                if ($taskDueDate > $unixTime2Days && $taskDueDate <= $unixTime7Days && $task->priority === 'High') {
+                if ($taskDueDate > $unixTime2Days && $taskDueDate <= $unixTime7Days && $task->priority === self::HIGH) {
                     if (!key_exists($task->project_id, $tasksDueDates)) {
-                        $tasksDueDates[$task->project_id]['High'] = 1;
-                        $tasksDueDates[$task->project_id]['Medium'] = 0;
-                        $tasksDueDates[$task->project_id]['Low'] = 0;
+                        $tasksDueDates[$task->project_id] = $this->getTaskDueDateArrayStructure(self::HIGH);
                     } else {
                         $tasksDueDates[$task->project_id]['High']++;
                     }
                 }
                 //check if task priority is Medium and due_date is between next 8-14 days, add counter
-                if ($taskDueDate > $unixTime7Days && $taskDueDate <= $unixTime14Days && $task->priority === 'Medium') {
+                if ($taskDueDate > $unixTime7Days && $taskDueDate <= $unixTime14Days && $task->priority
+                    === self::MEDIUM
+                ) {
                     if (!key_exists($task->project_id, $tasksDueDates)) {
-                        $tasksDueDates[$task->project_id]['High'] = 0;
-                        $tasksDueDates[$task->project_id]['Medium'] = 1;
-                        $tasksDueDates[$task->project_id]['Low'] = 0;
+                        $tasksDueDates[$task->project_id] = $this->getTaskDueDateArrayStructure(self::MEDIUM);
                     } else {
                         $tasksDueDates[$task->project_id]['Medium']++;
                     }
                 }
                 //check if task priority is Low and due_date is between next 15-28 days, add counter
-                if ($taskDueDate > $unixTime14Days && $taskDueDate <= $unixTime28Days && $task->priority === 'Low') {
+                if ($taskDueDate > $unixTime14Days && $taskDueDate <= $unixTime28Days && $task->priority
+                    === self::LOW
+                ) {
                     if (!key_exists($task->project_id, $tasksDueDates)) {
-                        $tasksDueDates[$task->project_id]['High'] = 0;
-                        $tasksDueDates[$task->project_id]['Medium'] = 0;
-                        $tasksDueDates[$task->project_id]['Low'] = 1;
+                        $tasksDueDates[$task->project_id] = $this->getTaskDueDateArrayStructure(self::LOW);
                     } else {
                         $tasksDueDates[$task->project_id]['Low']++;
                     }
@@ -149,13 +151,13 @@ class NotifyAdminsTaskPriority extends Command
                                 . $projectToNotify->name
                                 . '*, there are *'
                                 . $tasksCounted;
-                            if ($priority === 'High') {
+                            if ($priority === self::HIGH) {
                                 $message .= '* tasks with *High priority* in next *7 days*';
                             }
-                            if ($priority === 'Medium') {
+                            if ($priority === self::MEDIUM) {
                                 $message .= '* tasks with *Medium priority* in next *14 days*';
                             }
-                            if ($priority === 'Low') {
+                            if ($priority === self::LOW) {
                                 $message .= '* tasks with *Low priority* in next *28 days*';
                             }
                             Slack::sendMessage($sendTo, $message, Slack::LOW_PRIORITY);
@@ -166,5 +168,31 @@ class NotifyAdminsTaskPriority extends Command
         }
 
         GenericModel::setCollection($preSetCollection);
+    }
+
+    /**
+     * Helper to get array with proper structure for task due dates counting
+     * @param $priority
+     * @return array
+     */
+    private function getTaskDueDateArrayStructure($priority)
+    {
+        $taskDueDates = [
+            'High' => 0,
+            'Medium' => 0,
+            'Low' => 0
+        ];
+
+        if ($priority === self::HIGH) {
+            $taskDueDates['High']++;
+        }
+        if ($priority === self::MEDIUM) {
+            $taskDueDates['High']++;
+        }
+        if ($priority === self::LOW) {
+            $taskDueDates['High']++;
+        }
+
+        return $taskDueDates;
     }
 }

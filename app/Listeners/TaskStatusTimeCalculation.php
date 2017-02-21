@@ -3,6 +3,8 @@
 namespace App\Listeners;
 
 use App\GenericModel;
+use App\Profile;
+use App\Services\ProfilePerformance;
 
 class TaskStatusTimeCalculation
 {
@@ -25,7 +27,7 @@ class TaskStatusTimeCalculation
 
         $taskOwner = $task->owner;
 
-        if (empty($newTaskOwner) && array_key_exists('owner', $updatedFields)) {
+        if (empty($taskOwner) && array_key_exists('owner', $updatedFields)) {
             $taskOwner = $updatedFields['owner'];
         }
 
@@ -37,8 +39,15 @@ class TaskStatusTimeCalculation
             $task->work = [];
         }
 
-        //on task creation check if there is owner assigned and set work field
+        /*On task creation/task claim check if there is owner assigned and set work field and task priority
+        coefficient*/
+        $profilePerformance = new ProfilePerformance();
+
+        $taskOwnerProfile = Profile::find($taskOwner);
+        $taskPriorityCoefficient = $profilePerformance->taskPriorityCoefficient($taskOwnerProfile, $task);
+
         if ($task->exists === false) {
+            $task->priorityCoefficient = $taskPriorityCoefficient;
             $task->work = [
                 $taskOwner => [
                     'worked' => 0,
@@ -52,6 +61,9 @@ class TaskStatusTimeCalculation
                 ]
             ];
         } elseif (!isset($task->work[$taskOwner])) {
+            if (!isset($task->priorityCoefficient)) {
+                $task->priorityCoefficient = $taskPriorityCoefficient;
+            }
             $work = $task->work;
             $work[$taskOwner] = [
                 'worked' => 0,

@@ -29,7 +29,9 @@ class TaskUpdateXpTest extends TestCase
         $this->profile->delete();
     }
 
-    //test update XP on unfinished task
+    /**
+     * test update XP on unfinished task
+     */
     public function testTaskUpdateXpUnfinishedTask()
     {
         // Assigned 30 minutes ago
@@ -44,7 +46,9 @@ class TaskUpdateXpTest extends TestCase
         $this->assertEquals(false, $out);
     }
 
-    //early task delivery with speedCoefficient < 0.75
+    /**
+     * Test task delivery in time
+     */
     public function testTaskUpdateXpEarlyTaskDelivery()
     {
         // Assigned 30 minutes ago
@@ -54,16 +58,15 @@ class TaskUpdateXpTest extends TestCase
 
         $task->estimatedHours = 0.6;
         $task->complexity = 5;
+        $task->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $task->save();
 
         $task->submitted_for_qa = true;
         $worked = $task->work;
 
-        //qa was 10 mins
-        $worked[$task->owner]['qa'] = 10 * 60;
-
-        //task worked 15 mins
-        $worked[$task->owner]['worked'] = 15 * 60;
+        $passedQaAgo = 5;
+        $worked[$task->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
 
         $task->work = $worked;
         $task->save();
@@ -78,26 +81,27 @@ class TaskUpdateXpTest extends TestCase
         $this->assertEquals(true, $out);
     }
 
-    //late delivery with speedCoefficient > 1 && <= 1.1 which is -1 XP point
-    public function testTaskUpdateXpLateTaskDeliveryFirstCase()
+    /**
+     * Test task late delivery
+     */
+    public function testTaskUpdateXpLateTaskDelivery()
     {
-        // Assigned 190 mins before
-        $minutesWorking = 190;
+        // Assigned 30 mins before
+        $minutesWorking = 30;
         $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
 
         $task->estimatedHours = 0.6;
         $task->complexity = 5;
+        $task->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $task->save();
 
         $task->submitted_for_qa = true;
         $worked = $task->work;
 
-        //qa was 5 min
-        $worked[$task->owner]['qa'] = 5 * 60;
-
-        //task worked 185 min
-        $worked[$task->owner]['worked'] = 185 * 60;
+        //Task finished after 2 days
+        $passedQa = 5;
+        $worked[$task->owner]['workTrackTimestamp'] = (int) (new \DateTime())->modify('+2 days')->format('U');
 
         $task->work = $worked;
         $task->save();
@@ -108,75 +112,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(199, $checkXpProfile->xp);
-        $this->assertEquals(true, $out);
-    }
-
-    //late delivery with speedCoefficient > 1.1 && <= 1.25 which is -2 XP point
-    public function testTaskUpdateXpLateTaskDeliverySecondCase()
-    {
-        // Assigned 205 mins before
-        $minutesWorking = 205;
-        $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
-        $task = $this->getAssignedTask($assignedAgo);
-
-        $task->estimatedHours = 0.6;
-        $task->complexity = 5;
-        $task->save();
-
-        $task->submitted_for_qa = true;
-        $worked = $task->work;
-
-        //qa was 4 min
-        $worked[$task->owner]['qa'] = 4 * 60;
-
-        //task worked 201 min
-        $worked[$task->owner]['worked'] = 201 * 60;
-
-        $task->work = $worked;
-        $task->save();
-        $task->passed_qa = true;
-
-        $event = new ModelUpdate($task);
-        $listener = new TaskUpdateXP($task);
-        $out = $listener->handle($event);
-
-        $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(198, $checkXpProfile->xp);
-        $this->assertEquals(true, $out);
-    }
-
-    //late delivery with speedCoefficient > 1.25 -3 XP point
-    public function testTaskUpdateXpLateTaskDeliveryThirdCase()
-    {
-        // Assigned 400 mins before
-        $minutesWorking = 400;
-        $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
-        $task = $this->getAssignedTask($assignedAgo);
-
-        $task->estimatedHours = 0.6;
-        $task->complexity = 5;
-        $task->save();
-
-        $task->submitted_for_qa = true;
-        $worked = $task->work;
-
-        //qa was 4 min
-        $worked[$task->owner]['qa'] = 4 * 60;
-
-        //task worked 46 min
-        $worked[$task->owner]['worked'] = 396 * 60;
-
-        $task->work = $worked;
-        $task->save();
-        $task->passed_qa = true;
-
-        $event = new ModelUpdate($task);
-        $listener = new TaskUpdateXP($task);
-        $out = $listener->handle($event);
-
-        $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(197, $checkXpProfile->xp);
+        $this->assertEquals(195, $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -193,6 +129,7 @@ class TaskUpdateXpTest extends TestCase
         
         $task->estimatedHours = 0.6;
         $task->complexity = 5;
+        $task->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $task->project_id = $project->id;
         $task->save();
 
@@ -207,6 +144,11 @@ class TaskUpdateXpTest extends TestCase
 
         //task worked 15 mins
         $worked[$task->owner]['worked'] = 15 * 60;
+
+        $passedQaAgo = 5;
+        $worked[$task->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
+
 
         $task->work = $worked;
         $task->save();
@@ -228,13 +170,14 @@ class TaskUpdateXpTest extends TestCase
         $project->acceptedBy = $this->profile->id;
         $project->save();
 
-        // Assigned 30 minutes ago
-        $minutesWorking = 30;
+        // Assigned 60 minutes ago
+        $minutesWorking = 60;
         $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
         $task = $this->getAssignedTask($assignedAgo);
 
         $task->estimatedHours = 0.6;
         $task->complexity = 5;
+        $task->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $task->project_id = $project->id;
         $task->save();
 
@@ -242,13 +185,17 @@ class TaskUpdateXpTest extends TestCase
         $worked = $task->work;
 
         //qa was 10 mins
-        $worked[$task->owner]['qa'] = 25 * 60 * 60;
+        $worked[$task->owner]['qa'] = 10 * 60;
 
-        //qa_in_progress was 40mins
-        $worked[$task->owner]['qa_in_progress'] = 40 * 60;
+        //qa_in_progress was 35 mins
+        $worked[$task->owner]['qa_in_progress'] = 35 * 60;
 
-        //task worked 15 mins
-        $worked[$task->owner]['worked'] = 15 * 60;
+        //task worked 10 mins
+        $worked[$task->owner]['worked'] = 10 * 60;
+
+        $passedQaAgo = 5;
+        $worked[$task->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
 
         $task->work = $worked;
         $task->save();
@@ -289,6 +236,7 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriority->priority = 'Low';
         $taskLowPriority->estimatedHours = 0.6;
         $taskLowPriority->complexity = 5;
+        $taskLowPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskLowPriority->project_id = $project->id;
         $taskLowPriority->save();
 
@@ -300,6 +248,10 @@ class TaskUpdateXpTest extends TestCase
 
         //task worked 15 mins
         $worked[$taskLowPriority->owner]['worked'] = 15 * 60;
+
+        $passedQaAgo = 5;
+        $worked[$taskLowPriority->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
 
         $taskLowPriority->work = $worked;
         $taskLowPriority->save();
@@ -343,6 +295,7 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriority->priority = 'Low';
         $taskLowPriority->estimatedHours = 0.6;
         $taskLowPriority->complexity = 5;
+        $taskLowPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskLowPriority->project_id = $project->id;
         $taskLowPriority->save();
 
@@ -354,6 +307,10 @@ class TaskUpdateXpTest extends TestCase
 
         //task worked 15 mins
         $worked[$taskLowPriority->owner]['worked'] = 15 * 60;
+
+        $passedQaAgo = 5;
+        $worked[$taskLowPriority->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
 
         $taskLowPriority->work = $worked;
         $taskLowPriority->save();
@@ -369,7 +326,7 @@ class TaskUpdateXpTest extends TestCase
     }
 
     /**
-     * Test task update XP with medium priorty task, without any unassigned high priority and with unassigned low
+     * Test task update XP with medium priority task, without any unassigned high priority and with unassigned low
      * priority task
      */
     public function testTaskUpdateXpTaskPriorityMediumOrLow()
@@ -393,6 +350,7 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriority->priority = 'Medium';
         $taskMediumPriority->estimatedHours = 0.6;
         $taskMediumPriority->complexity = 5;
+        $taskMediumPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskMediumPriority->project_id = $project->id;
         $taskMediumPriority->save();
 
@@ -404,6 +362,10 @@ class TaskUpdateXpTest extends TestCase
 
         //task worked 15 mins
         $worked[$taskMediumPriority->owner]['worked'] = 15 * 60;
+
+        $passedQaAgo = 5;
+        $worked[$taskMediumPriority->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
 
         $taskMediumPriority->work = $worked;
         $taskMediumPriority->save();
@@ -419,7 +381,7 @@ class TaskUpdateXpTest extends TestCase
     }
 
     /**
-     * Test task deduct XP award for medium priorty task because there is unassigned high priority task
+     * Test task deduct XP award for medium priority task because there is unassigned high priority task
      */
     public function testTaskUpdateXpTaskPriorityMediumDeduct()
     {
@@ -447,6 +409,7 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriority->priority = 'Medium';
         $taskMediumPriority->estimatedHours = 0.6;
         $taskMediumPriority->complexity = 5;
+        $taskMediumPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskMediumPriority->project_id = $project->id;
         $taskMediumPriority->save();
 
@@ -458,6 +421,10 @@ class TaskUpdateXpTest extends TestCase
 
         //task worked 15 mins
         $worked[$taskMediumPriority->owner]['worked'] = 15 * 60;
+
+        $passedQaAgo = 5;
+        $worked[$taskMediumPriority->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
 
         $taskMediumPriority->work = $worked;
         $taskMediumPriority->save();
@@ -501,6 +468,7 @@ class TaskUpdateXpTest extends TestCase
         $taskHighPriority->priority = 'High';
         $taskHighPriority->estimatedHours = 0.6;
         $taskHighPriority->complexity = 5;
+        $taskHighPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskHighPriority->project_id = $project->id;
         $taskHighPriority->save();
 
@@ -512,6 +480,10 @@ class TaskUpdateXpTest extends TestCase
 
         //task worked 15 mins
         $worked[$taskHighPriority->owner]['worked'] = 15 * 60;
+
+        $passedQaAgo = 5;
+        $worked[$taskHighPriority->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
 
         $taskHighPriority->work = $worked;
         $taskHighPriority->save();

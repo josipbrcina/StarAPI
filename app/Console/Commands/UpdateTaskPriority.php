@@ -11,6 +11,8 @@ use App\Helpers\Slack;
 
 class UpdateTaskPriority extends Command
 {
+    const HIGH = 'High';
+    const MEDIUM = 'Medium';
     /**
      * The name and signature of the console command.
      *
@@ -56,8 +58,8 @@ class UpdateTaskPriority extends Command
             if (empty($task->owner)) {
                 $taskDueDate = InputHandler::getUnixTimestamp($task->due_date);
                 //check if task due_date is in next 7 days and switch task priority to High if not set already
-                if ($taskDueDate >= $unixTimeNow && $taskDueDate <= $unixTime7Days && $task->priority !== 'High') {
-                    $task->priority = 'High';
+                if ($taskDueDate >= $unixTimeNow && $taskDueDate <= $unixTime7Days && $task->priority !== self::HIGH) {
+                    $task->priority = self::HIGH;
                     $task->save();
                     if (!key_exists($task->project_id, $tasksBumpedPerProject)) {
                         $tasksBumpedPerProject[$task->project_id]['High'] = 1;
@@ -68,8 +70,10 @@ class UpdateTaskPriority extends Command
                 }
                 /*check if task due_date is between next 8 - 14 days and switch task priority to Medium if not set
                  already*/
-                if ($taskDueDate > $unixTime7Days && $taskDueDate <= $unixTime14Days && $task->priority !== 'Medium') {
-                    $task->priority = 'Medium';
+                if ($taskDueDate > $unixTime7Days && $taskDueDate <= $unixTime14Days && $task->priority
+                    !== self::MEDIUM
+                ) {
+                    $task->priority = self::MEDIUM;
                     $task->save();
                     if (!key_exists($task->project_id, $tasksBumpedPerProject)) {
                         $tasksBumpedPerProject[$task->project_id]['High'] = 0;
@@ -77,7 +81,6 @@ class UpdateTaskPriority extends Command
                     } else {
                         $tasksBumpedPerProject[$task->project_id]['Medium']++;
                     }
-                    $this->info('MEDIUM');
                 }
             }
         }

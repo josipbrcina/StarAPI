@@ -55,6 +55,7 @@ class ProfilePerformanceTest extends TestCase
                     'qaProgressSeconds' => 0,
                     'qaProgressTotalSeconds' => 0,
                     'blockedSeconds' => 0,
+                    'workTrackTimestamp' => $task->work[$this->profile->id]['workTrackTimestamp'],
                     'taskLastOwner' => true,
                     'taskCompleted' => false,
                 ]
@@ -90,6 +91,7 @@ class ProfilePerformanceTest extends TestCase
         $this->assertArrayHasKey('qaProgressSeconds', $profilePerformanceArray);
         $this->assertArrayHasKey('qaProgressTotalSeconds', $profilePerformanceArray);
         $this->assertArrayHasKey('blockedSeconds', $profilePerformanceArray);
+        $this->assertArrayHasKey('workTrackTimestamp', $profilePerformanceArray);
 
 
         $this->assertEquals(false, $profilePerformanceArray['taskCompleted']);
