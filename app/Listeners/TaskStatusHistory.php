@@ -49,6 +49,21 @@ class TaskStatusHistory
                 ];
             }
 
+            //update task_history if task is blocked/unblocked
+            if (key_exists('blocked', $newValues)) {
+                if ($newValues['blocked'] === false) {
+                    $task->paused = true;
+                }
+                $taskHistory[] = [
+                    'user' => $taskOwner->_id,
+                    'timestamp' => (int)($unixTime . '000'),
+                    'event' => $newValues['blocked'] === true ?
+                        str_replace('%s', 'blocked', $taskHistoryStatuses['blocked'])
+                        : str_replace('%s', 'unblocked', $taskHistoryStatuses['blocked']),
+                    'status' => $newValues['blocked'] === true ? 'blocked' : 'unblocked'
+                ];
+            }
+
             //update task_history if task is submitted for QA
             if (key_exists('submitted_for_qa', $newValues) && $newValues['submitted_for_qa'] === true) {
                 $taskHistory[] = [
