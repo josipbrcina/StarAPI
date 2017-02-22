@@ -66,7 +66,7 @@ return [
             'qa_fail' => 'Task failed QA',
             'qa_success' => 'Task passed QA',
             'blocked' => 'Task is currently blocked',
-            'qa_progress' => 'Task is in QA progress'
+            'qa_in_progress' => 'Task is in QA progress'
         ],
         'taskComplexityOptions' => [
             1,

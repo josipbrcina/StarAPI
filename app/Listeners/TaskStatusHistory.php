@@ -38,7 +38,7 @@ class TaskStatusHistory
             }
 
             //update task_history if task is paused or resumed without QA in progress
-            if (key_exists('paused', $newValues) && (!key_exists('qa_progress', $newValues))) {
+            if (key_exists('paused', $newValues) && (!key_exists('qa_in_progress', $newValues))) {
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),
@@ -60,19 +60,18 @@ class TaskStatusHistory
             }
 
             //update task_history if task is set to QA in progress
-            if (key_exists('qa_progress', $newValues) && $newValues['qa_progress'] === true) {
+            if (key_exists('qa_in_progress', $newValues) && $newValues['qa_in_progress'] === true) {
                 $task->submitted_for_qa = false;
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),
-                    'event' => $taskHistoryStatuses['qa_progress'],
-                    'status' => 'qa_progress'
+                    'event' => $taskHistoryStatuses['qa_in_progress'],
+                    'status' => 'qa_in_progress'
                 ];
-
             }
 
             //if task fails QA set task to paused and update task_history for paused
-            if (key_exists('qa_progress', $newValues) && $newValues['qa_progress'] === false) {
+            if (key_exists('qa_in_progress', $newValues) && $newValues['qa_in_progress'] === false) {
                 $task->paused = true;
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
@@ -84,7 +83,7 @@ class TaskStatusHistory
 
             //update task_history if task passed QA
             if (key_exists('passed_qa', $newValues) && $newValues['passed_qa'] === true) {
-                $task->qa_progress = false;
+                $task->qa_in_progress = false;
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),
