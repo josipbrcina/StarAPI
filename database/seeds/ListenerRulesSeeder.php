@@ -38,6 +38,9 @@ namespace {
                             'App\Events\TaskSettingStatus' => [
                                 'App\Listeners\TaskSettingStatus'
                             ],
+                            'App\Events\TaskBlockedNotifyProjectOwner' => [
+                                'App\Listeners\TaskBlockedNotifyProjectOwner'
+                            ],
                             'App\Events\TaskStatusHistory' => [
                                 'App\Listeners\TaskStatusHistory'
                             ],

@@ -94,6 +94,21 @@ trait ProjectRelated
     }
 
     /**
+     * Get new sprint
+     * @return GenericModel
+     */
+    public function getNewSprint()
+    {
+        GenericModel::setCollection('sprints');
+        return new GenericModel(
+            [
+                'project_id' => '',
+                'title' => 'Test Sprint'
+            ]
+        );
+    }
+
+    /**
      * Get assigned task
      * @return GenericModel
      */
