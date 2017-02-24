@@ -47,7 +47,7 @@ class TaskUpdateXpTest extends TestCase
     }
 
     /**
-     * Test task delivery in time
+     * Test task delivery day earlier then due_date
      */
     public function testTaskUpdateXpEarlyTaskDelivery()
     {
@@ -59,6 +59,41 @@ class TaskUpdateXpTest extends TestCase
         $task->estimatedHours = 0.6;
         $task->complexity = 5;
         $task->due_date = (new \DateTime())->modify('+1 day')->format('U');
+        $task->save();
+
+        $task->submitted_for_qa = true;
+        $worked = $task->work;
+
+        $passedQaAgo = 5;
+        $worked[$task->owner]['workTrackTimestamp'] =
+            (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
+
+        $task->work = $worked;
+        $task->save();
+        $task->passed_qa = true;
+
+        $event = new ModelUpdate($task);
+        $listener = new TaskUpdateXP($task);
+        $out = $listener->handle($event);
+
+        $checkXpProfile = Profile::find($this->profile->id);
+        $this->assertEquals(200.2025, $checkXpProfile->xp);
+        $this->assertEquals(true, $out);
+    }
+
+    /**
+     * Test task delivery on due_date
+     */
+    public function testTaskUpdateXpDeliveredOnTaskDueDate()
+    {
+        // Assigned 30 minutes ago
+        $minutesWorking = 30;
+        $assignedAgo = (int) (new \DateTime())->sub(new \DateInterval('PT' . $minutesWorking . 'M'))->format('U');
+        $task = $this->getAssignedTask($assignedAgo);
+
+        $task->estimatedHours = 0.6;
+        $task->complexity = 5;
+        $task->due_date = (new \DateTime())->format('U');
         $task->save();
 
         $task->submitted_for_qa = true;
@@ -99,8 +134,7 @@ class TaskUpdateXpTest extends TestCase
         $task->submitted_for_qa = true;
         $worked = $task->work;
 
-        //Task finished after 2 days
-        $passedQa = 5;
+        // Task finished after 2 days
         $worked[$task->owner]['workTrackTimestamp'] = (int) (new \DateTime())->modify('+2 days')->format('U');
 
         $task->work = $worked;
@@ -136,13 +170,13 @@ class TaskUpdateXpTest extends TestCase
         $task->submitted_for_qa = true;
         $worked = $task->work;
 
-        //qa was 10 mins
+        // Qa was 10 mins
         $worked[$task->owner]['qa'] = 10 * 60;
 
-        //qa_in_progress was 10mins
+        // qa_in_progress was 10 mins
         $worked[$task->owner]['qa_in_progress'] = 10 * 60;
 
-        //task worked 15 mins
+        // Task worked 15 mins
         $worked[$task->owner]['worked'] = 15 * 60;
 
         $passedQaAgo = 5;
@@ -158,7 +192,7 @@ class TaskUpdateXpTest extends TestCase
         $listener = new TaskUpdateXP($task);
         $out = $listener->handle($event);
 
-        //task done in time so task owner(admin also) get's double XP
+        // Task done in time so task owner(admin also) get's double XP
         $checkXpProfile = Profile::find($this->profile->id);
         $this->assertEquals(200.4525, $checkXpProfile->xp);
         $this->assertEquals(true, $out);
@@ -184,13 +218,13 @@ class TaskUpdateXpTest extends TestCase
         $task->submitted_for_qa = true;
         $worked = $task->work;
 
-        //qa was 10 mins
+        // Qa was 10 mins
         $worked[$task->owner]['qa'] = 10 * 60;
 
-        //qa_in_progress was 35 mins
+        // qa_in_progress was 35 mins
         $worked[$task->owner]['qa_in_progress'] = 35 * 60;
 
-        //task worked 10 mins
+        // Task worked 10 mins
         $worked[$task->owner]['worked'] = 10 * 60;
 
         $passedQaAgo = 5;
@@ -205,7 +239,7 @@ class TaskUpdateXpTest extends TestCase
         $listener = new TaskUpdateXP($task);
         $out = $listener->handle($event);
 
-        //task owner get's XP for early delivery and xp is deducted because code note reviewed in time
+        // Task owner get's XP for early delivery and xp is deducted because code note reviewed in time
         $checkXpProfile = Profile::find($this->profile->id);
         $this->assertEquals(197.2025, $checkXpProfile->xp);
         $this->assertEquals(true, $out);
@@ -243,10 +277,10 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriority->submitted_for_qa = true;
         $worked = $taskLowPriority->work;
 
-        //qa was 10 mins
+        // Qa was 10 mins
         $worked[$taskLowPriority->owner]['qa'] = 10 * 60;
 
-        //task worked 15 mins
+        // Task worked 15 mins
         $worked[$taskLowPriority->owner]['worked'] = 15 * 60;
 
         $passedQaAgo = 5;
@@ -302,10 +336,10 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriority->submitted_for_qa = true;
         $worked = $taskLowPriority->work;
 
-        //qa was 10 mins
+        // Qa was 10 mins
         $worked[$taskLowPriority->owner]['qa'] = 10 * 60;
 
-        //task worked 15 mins
+        // Task worked 15 mins
         $worked[$taskLowPriority->owner]['worked'] = 15 * 60;
 
         $passedQaAgo = 5;
@@ -357,10 +391,10 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriority->submitted_for_qa = true;
         $worked = $taskMediumPriority->work;
 
-        //qa was 10 mins
+        // Qa was 10 mins
         $worked[$taskMediumPriority->owner]['qa'] = 10 * 60;
 
-        //task worked 15 mins
+        // Task worked 15 mins
         $worked[$taskMediumPriority->owner]['worked'] = 15 * 60;
 
         $passedQaAgo = 5;
@@ -416,10 +450,10 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriority->submitted_for_qa = true;
         $worked = $taskMediumPriority->work;
 
-        //qa was 10 mins
+        // Qa was 10 mins
         $worked[$taskMediumPriority->owner]['qa'] = 10 * 60;
 
-        //task worked 15 mins
+        // Task worked 15 mins
         $worked[$taskMediumPriority->owner]['worked'] = 15 * 60;
 
         $passedQaAgo = 5;
@@ -475,10 +509,10 @@ class TaskUpdateXpTest extends TestCase
         $taskHighPriority->submitted_for_qa = true;
         $worked = $taskHighPriority->work;
 
-        //qa was 10 mins
+        // Qa was 10 mins
         $worked[$taskHighPriority->owner]['qa'] = 10 * 60;
 
-        //task worked 15 mins
+        // Task worked 15 mins
         $worked[$taskHighPriority->owner]['worked'] = 15 * 60;
 
         $passedQaAgo = 5;

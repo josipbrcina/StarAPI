@@ -8,8 +8,8 @@ use App\Helpers\InputHandler;
 use App\Helpers\Slack;
 use App\Profile;
 use App\Services\ProfilePerformance;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Input;
 
 /**
  * Class TaskUpdateXP
@@ -58,9 +58,13 @@ class TaskUpdateXP
                 . $task->_id
                 . ')';
 
+            $taskFinishedUnixTime = InputHandler::getUnixTimestamp($taskDetails['workTrackTimestamp']);
+            $taskDueDateUnixTime = InputHandler::getUnixTimestamp($task->due_date);
+            $taskFinishedDate = Carbon::createFromFormat('U', $taskFinishedUnixTime)->format('Y-m-d');
+            $taskDueDate = Carbon::createFromFormat('U', $taskDueDateUnixTime)->format('Y-m-d');
             $taskXp = (float) $mappedValues['xp'];
-            if (InputHandler::getUnixTimestamp($taskDetails['workTrackTimestamp'])
-                <= InputHandler::getUnixTimestamp($task->due_date)) {
+
+            if ($taskFinishedDate <= $taskDueDate) {
                 $xpDiff = $taskXp;
                 $message = 'Task Delivered on time: ' . $taskLink;
             } else {
