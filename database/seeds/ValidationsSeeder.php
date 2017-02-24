@@ -197,7 +197,8 @@ namespace {
                                     'owner',
                                     'paused',
                                     'task_history',
-                                    'blocked'
+                                    'blocked',
+                                    'commentsId'
                                 ],
                                 'GET' => true,
                                 'DELETE' => false,
