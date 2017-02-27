@@ -19,12 +19,13 @@ class ProfilePerformanceTest extends TestCase
     {
         parent::setUp();
 
-        $this->setTaskOwner(new Profile());
+        $this->setTaskOwner(Profile::create());
+        $this->profile->xp = 200;
+        $this->profile->save();
 
         $this->projectOwner = new Profile();
 
         $this->projectOwner->save();
-        $this->profile->save();
     }
 
     public function tearDown()
@@ -183,5 +184,44 @@ class ProfilePerformanceTest extends TestCase
         $out = $pp->aggregateForTimeRange($this->profile, $twoDaysBeforeFirstWorkDay, $firstWorkDay);
 
         $this->assertEquals(1, $out['xpDiff']);
+    }
+
+    /**
+     * Test profile performance for six days time range, with some tasks within time range and out of time range
+     */
+    public function testProfilePerformanceTaskCalculationDeliveryForTimeRangeSixDays()
+    {
+        $project = $this->getNewProject();
+        $project->save();
+
+        $workDays = WorkDays::getWorkDays();
+        $tasks = [];
+        $counter = 1;
+        foreach ($workDays as $day) {
+            $unixDay = \DateTime::createFromFormat('Y-m-d', $day)->format('U');
+            $task = $this->getAssignedTask($unixDay);
+            $task->save();
+            $task->estimatedHours = 1;
+            $task->project_id = $project->id;
+            if ($counter % 2 === 0) {
+                $task->passed_qa = true;
+            }
+            $task->save();
+            $tasks[$unixDay] = $task;
+            $counter++;
+        }
+
+        $workDaysUnixTimestamps = array_keys($tasks);
+
+        $pp = new ProfilePerformance();
+        $out = $pp->aggregateForTimeRange($this->profile, $workDaysUnixTimestamps[0], $workDaysUnixTimestamps[5]);
+
+        $this->assertEquals(100, $out['estimatedHours']);
+        $this->assertEquals(15, $out['hoursDelivered']);
+        $this->assertEquals(3000, $out['totalPayoutExternal']);
+        $this->assertEquals(1500, $out['realPayoutExternal']);
+        $this->assertEquals(0, $out['totalPayoutInternal']);
+        $this->assertEquals(0, $out['totalPayoutInternal']);
+        $this->assertEquals(0, $out['realPayoutInternal']);
     }
 }
