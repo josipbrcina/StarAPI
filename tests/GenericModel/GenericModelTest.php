@@ -46,7 +46,7 @@ class GenericModelTest extends TestCase
     /**
      * Test model unArchive
      */
-    public function testGenericModelunArchive()
+    public function testGenericModelUnArchive()
     {
         $project = $this->getNewArchivedProject();
         $project->save();
@@ -68,7 +68,7 @@ class GenericModelTest extends TestCase
     /**
      * Test model unArchive with wrong collection - exception error
      */
-    public function testGenericModelunArchiveWrongCollection()
+    public function testGenericModelUnArchiveWrongCollection()
     {
         $project = $this->getNewProject();
         $project->save();
