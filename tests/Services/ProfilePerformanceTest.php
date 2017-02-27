@@ -200,7 +200,6 @@ class ProfilePerformanceTest extends TestCase
         foreach ($workDays as $day) {
             $unixDay = \DateTime::createFromFormat('Y-m-d', $day)->format('U');
             $task = $this->getAssignedTask($unixDay);
-            $task->save();
             $task->estimatedHours = 1;
             $task->project_id = $project->id;
             if ($counter % 2 === 0) {
