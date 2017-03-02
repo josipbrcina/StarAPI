@@ -215,7 +215,7 @@ class ProfilePerformanceTest extends TestCase
         $pp = new ProfilePerformance();
         $out = $pp->aggregateForTimeRange($this->profile, $workDaysUnixTimestamps[0], $workDaysUnixTimestamps[5]);
 
-        $this->assertEquals(100, $out['estimatedHours']);
+        $this->assertEquals(115, $out['estimatedHours']);
         $this->assertEquals(15, $out['hoursDelivered']);
         $this->assertEquals(3000, $out['totalPayoutExternal']);
         $this->assertEquals(1500, $out['realPayoutExternal']);

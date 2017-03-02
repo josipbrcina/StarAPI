@@ -4,7 +4,6 @@ namespace App\Listeners;
 
 use App\Exceptions\UserInputException;
 use App\GenericModel;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 
 class TaskClaim
@@ -12,13 +11,12 @@ class TaskClaim
     /**
      * Handle the event.
      * @param \App\Events\TaskClaim $event
+     * @return bool
      * @throws UserInputException
      */
     public function handle(\App\Events\TaskClaim $event)
     {
         $task = $event->model;
-
-        $taskOwnerId = Auth::user()->id;
 
         if ($task->isDirty()) {
             $preSetCollection = GenericModel::getCollection();
@@ -29,14 +27,28 @@ class TaskClaim
                 GenericModel::setCollection('tasks');
                 $allTasks = GenericModel::where('_id', '!=', $task->_id)
                     ->get();
-                $taskReservationTime = Config::get('sharedSettings.internalConfiguration.tasks.reservation.maxReservationTime');
+                $taskReservationTime =
+                    Config::get('sharedSettings.internalConfiguration.tasks.reservation.maxReservationTime');
                 $currentUnixTime = (new \DateTime())->format('U');
 
+                // Check if task is claimed/assigned and set owner ID
                 if (key_exists('owner', $updatedFields)) {
                     $taskOwnerId = $updatedFields['owner'];
                 }
+                // Check if task is reserved and read user id from reservationsBy array
+                if (key_exists('reservationsBy', $updatedFields)) {
+                    $taskOwnerId = $updatedFields['reservationsBy'][0]['user_id'];
+                }
+                // Check if user is a member of project that task belongs to
+                GenericModel::setCollection('projects');
+                $project = GenericModel::where('_id', '=', $task->project_id)->first();
+
+                if (!in_array($taskOwnerId, $project->members)) {
+                    throw new UserInputException('Permission denied. Not a member of project.');
+                }
 
                 foreach ($allTasks as $item) {
+                    // Check if user already has some task reserved within reservation time
                     if (!empty($item->reservationsBy)) {
                         foreach ($item->reservationsBy as $userReservation) {
                             if ($currentUnixTime - $userReservation['timestamp'] <= ($taskReservationTime * 60)
@@ -46,6 +58,7 @@ class TaskClaim
                             }
                         }
                     }
+                    // Check if user has got some unfinished tasks
                     if ($item->owner === $taskOwnerId
                         && $item->passed_qa === false
                         && $item->blocked === false
@@ -58,6 +71,8 @@ class TaskClaim
             }
 
             GenericModel::setCollection($preSetCollection);
+
+            return true;
         }
     }
 }
