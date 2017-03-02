@@ -23,9 +23,6 @@ class ProfilePerformance
      */
     public function aggregateForTimeRange(Profile $profile, $unixStart, $unixEnd)
     {
-        $unixStartDate = Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($unixStart))->format('Y-m-d');
-        $unixEndDate = Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($unixEnd))->format('Y-m-d');
-
         // Get all profile tasks
         GenericModel::setCollection('tasks');
         $profileTasksUnfinished = GenericModel::where('owner', '=', $profile->id)
@@ -41,8 +38,6 @@ class ProfilePerformance
             ->get();
 
         $profileTasks = $profileTasksUnfinished->merge($profileTasksFinished);
-
-
 
         $estimatedHours = 0;
         $hoursDelivered = 0;
@@ -74,7 +69,7 @@ class ProfilePerformance
                     }
                 }
             } else {
-                $estimatedHours += (float)$task->estimatedHours;
+                $estimatedHours += (float)$task->estimatedHours; // For old tasks without work field
             }
 
 
@@ -123,7 +118,7 @@ class ProfilePerformance
         // Sum up totals
         $totalPayoutCombined = $totalPayoutExternal + $totalPayoutInternal;
         $realPayoutCombined = $realPayoutExternal + $realPayoutInternal;
-
+        $timeDoingQaHours = $this->roundFloat(($timeDoingQa / 60 / 60), 2, 5);
         $out = [
             'estimatedHours' => $estimatedHours,
             'hoursDelivered' => $hoursDelivered,
@@ -133,7 +128,7 @@ class ProfilePerformance
             'realPayoutInternal' => $realPayoutInternal,
             'totalPayoutCombined' => $totalPayoutCombined,
             'realPayoutCombined' => $realPayoutCombined,
-            'timeDoingQA' => $timeDoingQa,
+            'timeDoingQA' => $timeDoingQaHours,
             'xpDiff' => $xpDiff,
             'xpTotal' => $profile->xp,
         ];

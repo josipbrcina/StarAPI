@@ -27,7 +27,7 @@ class TaskStatusHistory
             //update task_history if task is claimed or assigned
             if (key_exists('owner', $newValues)) {
                 $taskOwner = Profile::find($newValues['owner']);
-                $task->timeAssigned = $unixTime;
+                $task->timeAssigned = (int) $unixTime;
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),
@@ -99,7 +99,7 @@ class TaskStatusHistory
 
             //update task_history if task passed QA
             if (key_exists('passed_qa', $newValues) && $newValues['passed_qa'] === true) {
-                $task->timeFinished = $unixTime;
+                $task->timeFinished = (int) $unixTime;
                 $task->qa_in_progress = false;
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,

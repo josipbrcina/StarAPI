@@ -47,7 +47,7 @@ class TaskStatusTimeCalculation
         $taskPriorityCoefficient = $profilePerformance->taskPriorityCoefficient($taskOwnerProfile, $task);
 
         if ($task->exists === false) {
-            $task->timeAssigned = $unixTime;
+            $task->timeAssigned = (int) $unixTime;
             $task->priorityCoefficient = $taskPriorityCoefficient;
             $task->work = [
                 $taskOwner => [

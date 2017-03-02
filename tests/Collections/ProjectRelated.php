@@ -123,7 +123,7 @@ trait ProjectRelated
         $task = $this->getNewTask();
 
         $task->owner = $this->profile->id;
-        $task->timeAssigned = $timestamp;
+        $task->timeAssigned = (int) $timestamp;
         $task->timeFinished = null;
         $task->work = [
             $this->profile->id => [

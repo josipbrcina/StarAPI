@@ -191,7 +191,6 @@ class ProfilePerformanceTest extends TestCase
      */
     public function testProfilePerformanceTaskCalculationDeliveryForTimeRangeSixDays()
     {
-        $this->markTestSkipped('must be revisited.');
         $project = $this->getNewProject();
         $project->save();
 
@@ -205,7 +204,10 @@ class ProfilePerformanceTest extends TestCase
             $task->project_id = $project->id;
             if ($counter % 2 === 0) {
                 $task->passed_qa = true;
-                $task->timeFinished = $unixDay;
+                $task->timeFinished = (int) $unixDay;
+                $work = $task->work;
+                $work[$this->profile->id]['qa_total_time'] = 1800;
+                $task->work = $work;
             }
             $task->save();
             $tasks[$unixDay] = $task;
@@ -224,5 +226,6 @@ class ProfilePerformanceTest extends TestCase
         $this->assertEquals(0, $out['totalPayoutInternal']);
         $this->assertEquals(0, $out['totalPayoutInternal']);
         $this->assertEquals(0, $out['realPayoutInternal']);
+        $this->assertEquals(1.5, $out['timeDoingQA']);
     }
 }
