@@ -226,6 +226,6 @@ class ProfilePerformanceTest extends TestCase
         $this->assertEquals(0, $out['totalPayoutInternal']);
         $this->assertEquals(0, $out['totalPayoutInternal']);
         $this->assertEquals(0, $out['realPayoutInternal']);
-        $this->assertEquals(1.5, $out['timeDoingQA']);
+        $this->assertEquals(1.5, $out['hoursDoingQA']);
     }
 }

@@ -128,7 +128,7 @@ class ProfilePerformance
             'realPayoutInternal' => $realPayoutInternal,
             'totalPayoutCombined' => $totalPayoutCombined,
             'realPayoutCombined' => $realPayoutCombined,
-            'timeDoingQA' => $timeDoingQaHours,
+            'hoursDoingQA' => $timeDoingQaHours,
             'xpDiff' => $xpDiff,
             'xpTotal' => $profile->xp,
         ];
