@@ -32,6 +32,7 @@ trait ProjectRelated
                 'owner' => '',
                 'paused' => false,
                 'submitted_for_qa' => false,
+                'qa_in_progress' => false,
                 'blocked' => false,
                 'passed_qa' => false
             ]
@@ -47,11 +48,8 @@ trait ProjectRelated
         GenericModel::setCollection('projects');
         return new GenericModel(
             [
-                'owner' => '',
-                'paused' => false,
-                'submitted_for_qa' => false,
-                'blocked' => false,
-                'passed_qa' => false,
+                'name' => 'Test Project',
+                'acceptedBy' => '',
                 'members' => []
             ]
         );
@@ -66,11 +64,9 @@ trait ProjectRelated
         GenericModel::setCollection('projects_archived');
         return new GenericModel(
             [
-                'owner' => '',
-                'paused' => false,
-                'submitted_for_qa' => false,
-                'blocked' => false,
-                'passed_qa' => false
+                'name' => 'Test Project',
+                'acceptedBy' => '',
+                'members' => []
             ]
         );
     }
@@ -84,11 +80,9 @@ trait ProjectRelated
         GenericModel::setCollection('projects_deleted');
         return new GenericModel(
             [
-                'owner' => '',
-                'paused' => false,
-                'submitted_for_qa' => false,
-                'blocked' => false,
-                'passed_qa' => false
+                'name' => 'Test Project',
+                'acceptedBy' => '',
+                'members' => []
             ]
         );
     }

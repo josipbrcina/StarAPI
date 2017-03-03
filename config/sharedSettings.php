@@ -86,7 +86,7 @@ return [
         'skills' => [
             'PHP',
             'React',
-            'Cloud',
+            'DevOps',
             'Node',
             'Planning'
         ],

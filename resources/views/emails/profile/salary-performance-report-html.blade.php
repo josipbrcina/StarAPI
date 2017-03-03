@@ -5,7 +5,7 @@
     </p>
 
     <p>
-        Base gross salary: <strong>{{$realGrossPayout}} HRK</strong>
+        Base gross salary: <strong>{{$minimalGrossPayout}} HRK</strong>
     </p>
 
     <p>
@@ -13,6 +13,6 @@
     </p>
 
     <p>
-        Gross total: <strong>{{$realGrossPayout + $grossBonusPayout}} HRK</strong>
+        Gross total: <strong>{{$realGrossPayout}} HRK</strong>
     </p>
 </div>
