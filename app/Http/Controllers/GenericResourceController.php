@@ -21,12 +21,12 @@ class GenericResourceController extends Controller
      */
     public function index(Request $request)
     {
-        //if request route is archive, set archived collection for query
+        // If request route is archive, set archived collection for query
         $this->checkArchivedCollection($request);
 
         $query = GenericModel::query();
 
-        //default query params values
+        // Default query params values
         $orderBy = '_id';
         $orderDirection = 'desc';
         $offset = 0;
@@ -45,6 +45,7 @@ class GenericResourceController extends Controller
                 'looseSearch'
             ];
 
+            // Set operator like if request has looseSearch
             $operator = '=';
             if ($request->has('looseSearch')) {
                 $operator = 'like';
@@ -55,6 +56,28 @@ class GenericResourceController extends Controller
                     continue;
                 }
 
+                // Check if value has "range" delimiter and set query
+                if (strpos($value, '>=<')) {
+                    $values = explode('>=<', $value);
+                    $trimmedValues = array_map('trim', $values);
+                    $query->where(
+                        $key,
+                        '>=',
+                        ctype_digit($trimmedValues[0]) ? (int) $trimmedValues[0] : $trimmedValues[0]
+                    );
+                    $query->where(
+                        $key,
+                        '<=',
+                        ctype_digit($trimmedValues[1]) ? (int) $trimmedValues[1] : $trimmedValues[1]
+                    );
+
+                    if (count($trimmedValues) > 2) {
+                        $errors[] = 'Range search must be between two values.';
+                    }
+                    continue;
+                }
+
+                // Check if value is array
                 if (is_array($value)) {
                     $query->whereIn($key, $value);
                 } else {
@@ -75,6 +98,7 @@ class GenericResourceController extends Controller
             }
         }
 
+        // Check if request has orderBy, orderDirection, offset or limit field and set query
         if ($request->has('orderBy')) {
             $orderBy = $request->get('orderBy');
         }

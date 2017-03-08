@@ -3,6 +3,7 @@
 namespace Tests;
 
 use Illuminate\Contracts\Console\Kernel;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 abstract class TestCase extends \Illuminate\Foundation\Testing\TestCase
 {
@@ -32,5 +33,18 @@ abstract class TestCase extends \Illuminate\Foundation\Testing\TestCase
         $app->make(Kernel::class)->bootstrap();
 
         return $app;
+    }
+
+    protected function headers($user = null)
+    {
+        $headers = ['Accept' => 'application/json'];
+
+        if (!is_null($user)) {
+            $token = JWTAuth::fromUser($user);
+            JWTAuth::setToken($token);
+            $headers['Authorization'] = 'Bearer '.$token;
+        }
+
+        return $headers;
     }
 }
