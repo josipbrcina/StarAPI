@@ -5,7 +5,9 @@ namespace App\Listeners;
 use App\Events\TaskUpdateSlackNotify;
 use App\GenericModel;
 use App\Helpers\Slack;
+use App\Profile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 
 class TaskUpdateSlackNotification
 {
@@ -17,16 +19,25 @@ class TaskUpdateSlackNotification
      */
     public function handle(TaskUpdateSlackNotify $event)
     {
+        $task = $event->model;
         $preSetCollection = GenericModel::getCollection();
-        GenericModel::setCollection('projects');
-        $project = GenericModel::find($event->model->project_id);
 
-        GenericModel::setCollection('profiles');
-        $projectOwner = GenericModel::find($project->acceptedBy);
-        $taskOwner = GenericModel::find($event->model->owner);
+        GenericModel::setCollection('projects');
+        $project = GenericModel::find($task->project_id);
+
+        $projectOwner = Profile::find($project->acceptedBy);
+        $taskOwner = Profile::find($task->owner);
+
 
         // Let's build a list of recipients
         $recipients = [];
+
+        foreach ($task->watchers as $watcher) {
+            $watcherProfile = Profile::find($watcher);
+            if ($watcherProfile !== null && $watcherProfile->slack) {
+                $recipients[] = '@' . $watcherProfile->slack;
+            }
+        }
 
         if ($projectOwner && $projectOwner->slack && $projectOwner->_id !== Auth::user()->_id) {
             $recipients[] = '@' . $projectOwner->slack;
@@ -39,19 +50,19 @@ class TaskUpdateSlackNotification
         // Make sure that we don't double send notifications if task owner is project owner
         $recipients = array_unique($recipients);
 
-        $webDomain = \Config::get('sharedSettings.internalConfiguration.webDomain');
+        $webDomain = Config::get('sharedSettings.internalConfiguration.webDomain');
         $message = 'Task *'
-            . $event->model->title
+            . $task->title
             . '* was just updated by *'
-            . \Auth::user()->name
+            . Auth::user()->name
             . '* '
             . $webDomain
             . 'projects/'
-            . $event->model->project_id
+            . $task->project_id
             . '/sprints/'
-            . $event->model->sprint_id
+            . $task->sprint_id
             . '/tasks/'
-            . $event->model->_id;
+            . $task->_id;
 
         foreach ($recipients as $recipient) {
             Slack::sendMessage($recipient, $message, Slack::LOW_PRIORITY);
