@@ -116,6 +116,7 @@ trait ProjectRelated
         GenericModel::setCollection('tasks');
         $task = $this->getNewTask();
 
+        $task->due_date = $timestamp;
         $task->owner = $this->profile->id;
         $task->timeAssigned = (int) $timestamp;
         $task->timeFinished = null;
