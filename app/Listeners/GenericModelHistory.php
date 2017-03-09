@@ -30,7 +30,7 @@ class GenericModelHistory
                         'filedName' => $newField,
                         'oldValue' => $oldValues[$newField],
                         'newValue' => $newValue,
-                        'timestamp' => (int)($unixTime . '000') // Microtime
+                        'timestamp' => (int) ($unixTime . '000') // Microtime
                     ];
                 } else {
                     $history[] = [
@@ -38,7 +38,7 @@ class GenericModelHistory
                         'fieldName' => $newField,
                         'oldValue' => null,
                         'newValue' => $newValue,
-                        'timestamp' => (int)($unixTime . '000')
+                        'timestamp' => (int) ($unixTime . '000')
                     ];
                 }
             }
@@ -50,7 +50,7 @@ class GenericModelHistory
                         'fieldName' => $oldFieldName,
                         'oldValue' => $oldFieldValue,
                         'newValue' => null,
-                        'timestamp' => (int)($unixTime . '000')
+                        'timestamp' => (int) ($unixTime . '000')
                     ];
                 }
             }
