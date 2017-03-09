@@ -25,6 +25,16 @@ class TaskUpdateXP
     {
         $task = $event->model;
 
+        // Make sure not to update user XP if task is edited after QA has passed
+        if ($task->isDirty() !== true) {
+            return false;
+        } else {
+            $updatedFields = $task->getDirty();
+            if (!key_exists('passed_qa', $updatedFields) || $updatedFields['passed_qa'] !== true) {
+                return false;
+            }
+        }
+
         $profilePerformance = new ProfilePerformance();
 
         GenericModel::setCollection('tasks');
@@ -32,10 +42,6 @@ class TaskUpdateXP
         $taskPerformance = $profilePerformance->perTask($task);
 
         foreach ($taskPerformance as $profileId => $taskDetails) {
-            if ($taskDetails['taskCompleted'] === false) {
-                return false;
-            }
-
             if ($taskDetails['taskLastOwner'] === false) {
                 continue;
             }

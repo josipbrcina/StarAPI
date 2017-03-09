@@ -531,4 +531,43 @@ class TaskUpdateXpTest extends TestCase
         $this->assertEquals(200.2025, $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
+
+    /**
+     * Test listener for task that has been updated after task passed QA already
+     */
+    public function testTaskUpdateXpForTaskUpdatedAfterPassedQa()
+    {
+        $task = $this->getAssignedTask();
+        $task->passed_qa = true;
+        $task->save();
+
+        // Test finished task without any change
+        $event = new ModelUpdate($task);
+        $listener = new TaskUpdateXP($task);
+        $out = $listener->handle($event);
+
+        $this->assertEquals(false, $out);
+
+
+        // Let's make some update
+        $task->priority = 'High';
+        $task->title = 'Test';
+
+        // Test finished task with some updates
+        $event = new ModelUpdate($task);
+        $listener = new TaskUpdateXP($task);
+        $out = $listener->handle($event);
+
+        $this->assertEquals(false, $out);
+
+        $task->save();
+        $task->passed_qa = false;
+
+        // Test finished task with update passed_qa = false
+        $event = new ModelUpdate($task);
+        $listener = new TaskUpdateXP($task);
+        $out = $listener->handle($event);
+
+        $this->assertEquals(false, $out);
+    }
 }
