@@ -11,17 +11,17 @@ use Illuminate\Support\Facades\Config;
 use DateTime;
 
 /**
- * Class NotifyAdminsTaskDeadline
+ * Class NotifyProjectParticipantsAboutTaskDeadline
  * @package App\Console\Commands
  */
-class NotifyAdminsTaskDeadline extends Command
+class NotifyProjectParticipantsAboutTaskDeadline extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'ping:admins:task:deadline';
+    protected $signature = 'ping:projectParticipants:task:deadline';
 
     /**
      * The console command description.
@@ -29,7 +29,7 @@ class NotifyAdminsTaskDeadline extends Command
      * @var string
      */
     protected $description =
-        'Ping project members and Po on slack about approaching task deadline 7 days before deadline';
+        'Ping admins,project members and project owner on slack about approaching task deadline 7 days before deadline';
 
     /**
      * Execute the console command.

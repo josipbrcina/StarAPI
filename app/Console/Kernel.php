@@ -21,7 +21,7 @@ class Kernel extends ConsoleKernel
         Commands\UnfinishedTasks::class,
         Commands\EmailProfilePerformance::class,
         Commands\MonthlyMinimumCheck::class,
-        Commands\NotifyAdminsTaskDeadline::class,
+        Commands\NotifyProjectParticipantsAboutTaskDeadline::class,
         Commands\SlackSendMessages::class,
         Commands\UpdateTaskPriority::class,
         Commands\NotifyAdminsTaskPriority::class,
@@ -60,7 +60,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('employee:minimum:check')
             ->monthlyOn(1, '08:00');
 
-        $schedule->command('ping:admins:task:deadline')
+        $schedule->command('ping:projectParticipants:task:deadline')
             ->dailyAt('09:00');
 
         // Check for messages to send every minute
