@@ -19,7 +19,7 @@
         </whitelist>
     </filter>
     <php>
-        <env name="APP_ENV" value="starapi-testing"/>
+        <env name="APP_ENV" value="testing"/>
         <env name="DB_DATABASE" value="starapi-testing"/>
         <env name="CACHE_DRIVER" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>

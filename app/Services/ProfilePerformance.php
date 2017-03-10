@@ -23,9 +23,21 @@ class ProfilePerformance
      */
     public function aggregateForTimeRange(Profile $profile, $unixStart, $unixEnd)
     {
-        // Get all profile projects
+        // Get all profile tasks
         GenericModel::setCollection('tasks');
-        $profileTasks = GenericModel::where('owner', '=', $profile->id)->get();
+        $profileTasksUnfinished = GenericModel::where('owner', '=', $profile->id)
+            ->where('passed_qa', '=', false)
+            ->where('timeAssigned', '>=', $unixStart)
+            ->where('timeAssigned', '<=', $unixEnd)
+            ->get();
+
+        $profileTasksFinished = GenericModel::where('owner', '=', $profile->id)
+            ->where('passed_qa', '=', true)
+            ->where('timeFinished', '>=', $unixStart)
+            ->where('timeFinished', '<=', $unixEnd)
+            ->get();
+
+        $profileTasks = $profileTasksUnfinished->merge($profileTasksFinished);
 
         $estimatedHours = 0;
         $hoursDelivered = 0;
@@ -34,6 +46,7 @@ class ProfilePerformance
         $totalPayoutExternal = 0;
         $realPayoutExternal = 0;
         $xpDiff = 0;
+        $timeDoingQa = 0;
         $numberOfDays = (int)abs($unixEnd - $unixStart) / (24 * 60 * 60);
 
         $loadedProjects = [];
@@ -46,59 +59,19 @@ class ProfilePerformance
                 $task->{$key} = $value;
             }
 
-            // Check if tasks is in selected time range and delivered
-            $estimatedHours += (float)$task->estimatedHours;
-            $deliveredTask = false;
-            $taskInTimeRange = false;
-            $unixStartDate = Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($unixStart))->format('Y-m-d');
-            $unixEndDate = Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($unixEnd))->format('Y-m-d');
-
             if (array_key_exists($profile->id, $task->work)) {
                 foreach ($task->work as $userId => $workStats) {
                     if ($userId === $profile->id) {
-                        $assignedDate =
-                            Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($workStats['timeAssigned']))
-                                ->format('Y-m-d');
-                        $lastActivityDate =
-                            Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($workStats['workTrackTimestamp']))
-                                ->format('Y-m-d');
-                        // Get task if it's not finished and timeAssigned is within time range
-                        if ($task->passed_qa === false && $assignedDate <= $unixEndDate
-                            && $assignedDate >= $unixStartDate
-                        ) {
-                            $taskInTimeRange = true;
-                            break;
-                        }
-                        // Get task if finished and if delivery time (passed_qa) is within time range
-                        if ($task->passed_qa === true && $lastActivityDate <= $unixEndDate
-                            && $lastActivityDate >= $unixStartDate
-                        ) {
-                            $taskInTimeRange = true;
-                            $deliveredTask = true;
-                            break;
-                        }
+                        $estimatedHours += (float)$task->estimatedHours;
+                        $timeDoingQa += $workStats['qa_total_time'];
+                    } else {
+                        $timeDoingQa += $workStats['qa_total_time'];
                     }
                 }
             } else {
-                foreach ($task->task_history as $historyItem) {
-                    if (array_key_exists('status', $historyItem)
-                        && ($historyItem['status'] === 'assigned'
-                            || $historyItem['status'] === 'claimed')
-                        && InputHandler::getUnixTimestamp($historyItem['timestamp']) <= $unixEnd
-                        && InputHandler::getUnixTimestamp($historyItem['timestamp']) > $unixStart
-                    ) {
-                        $taskInTimeRange = true;
-                    } elseif (array_key_exists('status', $historyItem) && $historyItem['status'] === 'qa_success') {
-                        $deliveredTask = true;
-                        break;
-                    }
-                }
+                $estimatedHours += (float)$task->estimatedHours; // For old tasks without work field
             }
 
-            // Skip task if not in time range
-            if (!$taskInTimeRange) {
-                continue;
-            }
 
             // Get the project if not loaded already
             if (!array_key_exists($task->project_id, $loadedProjects)) {
@@ -115,7 +88,7 @@ class ProfilePerformance
                 $totalPayoutExternal += $task->payout;
             }
 
-            if ($deliveredTask === true) {
+            if ($task->passed_qa) {
                 $hoursDelivered += (int)$task->estimatedHours;
 
                 if ($isInternalProject) {
@@ -145,7 +118,7 @@ class ProfilePerformance
         // Sum up totals
         $totalPayoutCombined = $totalPayoutExternal + $totalPayoutInternal;
         $realPayoutCombined = $realPayoutExternal + $realPayoutInternal;
-
+        $timeDoingQaHours = $this->roundFloat(($timeDoingQa / 60 / 60), 2, 5);
         $out = [
             'estimatedHours' => $estimatedHours,
             'hoursDelivered' => $hoursDelivered,
@@ -155,6 +128,7 @@ class ProfilePerformance
             'realPayoutInternal' => $realPayoutInternal,
             'totalPayoutCombined' => $totalPayoutCombined,
             'realPayoutCombined' => $realPayoutCombined,
+            'hoursDoingQA' => $timeDoingQaHours,
             'xpDiff' => $xpDiff,
             'xpTotal' => $profile->xp,
         ];

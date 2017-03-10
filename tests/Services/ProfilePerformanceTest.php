@@ -204,6 +204,10 @@ class ProfilePerformanceTest extends TestCase
             $task->project_id = $project->id;
             if ($counter % 2 === 0) {
                 $task->passed_qa = true;
+                $task->timeFinished = (int) $unixDay;
+                $work = $task->work;
+                $work[$this->profile->id]['qa_total_time'] = 1800;
+                $task->work = $work;
             }
             $task->save();
             $tasks[$unixDay] = $task;
@@ -215,12 +219,13 @@ class ProfilePerformanceTest extends TestCase
         $pp = new ProfilePerformance();
         $out = $pp->aggregateForTimeRange($this->profile, $workDaysUnixTimestamps[0], $workDaysUnixTimestamps[5]);
 
-        $this->assertEquals(115, $out['estimatedHours']);
+        $this->assertEquals(30, $out['estimatedHours']);
         $this->assertEquals(15, $out['hoursDelivered']);
         $this->assertEquals(3000, $out['totalPayoutExternal']);
         $this->assertEquals(1500, $out['realPayoutExternal']);
         $this->assertEquals(0, $out['totalPayoutInternal']);
         $this->assertEquals(0, $out['totalPayoutInternal']);
         $this->assertEquals(0, $out['realPayoutInternal']);
+        $this->assertEquals(1.5, $out['hoursDoingQA']);
     }
 }

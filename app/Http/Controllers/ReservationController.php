@@ -16,8 +16,8 @@ use App\Events\GenericModelUpdate;
  */
 class ReservationController extends Controller
 {
-    CONST MAKE_RESERVATION = true;
-    CONST ACCEPT_OR_DECLINE = false;
+    const MAKE_RESERVATION = true;
+    const ACCEPT_OR_DECLINE = false;
 
     /**
      * Make reservation for selected project
@@ -237,7 +237,6 @@ class ReservationController extends Controller
 
         if (isset($model->reservationsBy)) {
             foreach ($model->reservationsBy as $reserved) {
-
                 //for makeReservation check time if model is already reserved by anyone
                 if ($action === self::MAKE_RESERVATION
                     && ($time - $reserved['timestamp'] <= ($reservationTime * 60))
@@ -251,6 +250,7 @@ class ReservationController extends Controller
                 //check if user already reserved and time passed, if so add flag declinedBy and return error
                 if ($action === (self::MAKE_RESERVATION || self::ACCEPT_OR_DECLINE)
                     && ($time - $reserved['timestamp'] >= ($reservationTime * 60))
+                    && $reserved['user_id'] === Auth::user()->id
                     && empty($model['collection'] === 'projects' ? $model->acceptedBy : $model->owner)
                 ) {
                     $declined = $model->declinedBy;
