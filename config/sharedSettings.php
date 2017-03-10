@@ -119,7 +119,17 @@ return [
                 ],
                 'settingName' => 'userRoles'
             ]
+
         ],
+        'feedbackForms' => [
+            [
+                'resolver' => [
+                    'class' => \App\Resolvers\FeedbackForms::class,
+                    'method' => 'getForms'
+                ],
+                'settingName' => 'feedbackForms'
+            ]
+        ]
     ],
 
     /**

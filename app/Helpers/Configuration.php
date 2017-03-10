@@ -3,15 +3,24 @@
 namespace App\Helpers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Config;
 
+/**
+ * Class Configuration
+ * @package App\Helpers
+ */
 class Configuration extends Controller
 {
-
+    /**
+     * Generate configuration list from sharedSettings
+     * @param null $email
+     * @return array|bool
+     */
     public static function getConfiguration($email = null)
     {
-        $internalSettings = \Config::get('sharedSettings.internalConfiguration', []);
-        $internalDynamicSettings = \Config::get('sharedSettings.internalDynamicConfiguration', []);
-        $externalSettings = \Config::get('sharedSettings.externalConfiguration', []);
+        $internalSettings = Config::get('sharedSettings.internalConfiguration', []);
+        $internalDynamicSettings = Config::get('sharedSettings.internalDynamicConfiguration', []);
+        $externalSettings = Config::get('sharedSettings.externalConfiguration', []);
         $allSettings = [];
         $allSettings['internal'] = $internalSettings;
 
@@ -19,6 +28,7 @@ class Configuration extends Controller
             return false;
         }
 
+        // Get internal dynamic settings
         foreach ($internalDynamicSettings as $settingName => $settings) {
             foreach ($settings as $setting) {
                 if (!key_exists('resolver', $setting)) {
@@ -33,6 +43,7 @@ class Configuration extends Controller
             }
         }
 
+        // Get external dynamic settings
         foreach ($externalSettings as $name => $configs) {
             foreach ($configs as $config) {
                 if (!key_exists('resolver', $config)) {
@@ -47,7 +58,7 @@ class Configuration extends Controller
             }
         }
 
-        // return slack company fields for email upon new user registration
+        // Return slack company fields for email upon new user registration
         if ($email !== null) {
             $response = [];
             $response['teamName'] = $allSettings['slack']['teamInfo']->team->name;
