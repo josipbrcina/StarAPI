@@ -17,7 +17,9 @@ class TaskUpdateXpTest extends TestCase
     {
         parent::setUp();
 
-        $this->setTaskOwner(Profile::create());
+        $this->setTaskOwner(Profile::create([
+            'skills' => ['PHP']
+        ]));
         $this->profile->xp = 200;
         $this->profile->save();
     }
@@ -257,9 +259,11 @@ class TaskUpdateXpTest extends TestCase
         $project->members = $members;
         $project->save();
 
+        $skillSet = ['PHP'];
         $taskLowPriorityWithoutOwner = $this->getNewTask();
         $taskLowPriorityWithoutOwner->project_id = $project->id;
         $taskLowPriorityWithoutOwner->priority = 'Low';
+        $taskLowPriorityWithoutOwner->skillset = $skillSet;
         $taskLowPriorityWithoutOwner->save();
 
         // Assigned 30 minutes ago
@@ -272,6 +276,7 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriority->complexity = 5;
         $taskLowPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskLowPriority->project_id = $project->id;
+        $taskLowPriority->skillset = $skillSet;
         $taskLowPriority->save();
 
         $taskLowPriority->submitted_for_qa = true;
@@ -311,14 +316,22 @@ class TaskUpdateXpTest extends TestCase
         $project->members = $members;
         $project->save();
 
+        $skillSet = [
+            'PHP',
+            'React',
+            'DevOps'
+        ];
+
         $taskMediumPriorityWithoutOwner = $this->getNewTask();
         $taskMediumPriorityWithoutOwner->project_id = $project->id;
         $taskMediumPriorityWithoutOwner->priority = 'Medium';
+        $taskMediumPriorityWithoutOwner->skillset = $skillSet;
         $taskMediumPriorityWithoutOwner->save();
 
         $taskHighPriorityWithoutOwner = $this->getNewTask();
         $taskHighPriorityWithoutOwner->project_id = $project->id;
         $taskHighPriorityWithoutOwner->priority = 'High';
+        $taskHighPriorityWithoutOwner->skillset = $skillSet;
         $taskHighPriorityWithoutOwner->save();
 
         // Assigned 30 minutes ago
@@ -331,6 +344,7 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriority->complexity = 5;
         $taskLowPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskLowPriority->project_id = $project->id;
+        $taskLowPriority->skillset = $skillSet;
         $taskLowPriority->save();
 
         $taskLowPriority->submitted_for_qa = true;
@@ -371,9 +385,16 @@ class TaskUpdateXpTest extends TestCase
         $project->members = $members;
         $project->save();
 
+        $skillSet = [
+            'PHP',
+            'React',
+            'DevOps'
+        ];
+
         $taskLowPriorityWithoutOwner = $this->getNewTask();
         $taskLowPriorityWithoutOwner->project_id = $project->id;
         $taskLowPriorityWithoutOwner->priority = 'Low';
+        $taskLowPriorityWithoutOwner->skillset = $skillSet;
         $taskLowPriorityWithoutOwner->save();
 
         // Assigned 30 minutes ago
@@ -386,6 +407,7 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriority->complexity = 5;
         $taskMediumPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskMediumPriority->project_id = $project->id;
+        $taskMediumPriority->skillset = $skillSet;
         $taskMediumPriority->save();
 
         $taskMediumPriority->submitted_for_qa = true;
@@ -425,14 +447,22 @@ class TaskUpdateXpTest extends TestCase
         $project->members = $members;
         $project->save();
 
+        $skillSet = [
+            'PHP',
+            'React',
+            'DevOps'
+        ];
+
         $taskHighPriorityWithoutOwner = $this->getNewTask();
         $taskHighPriorityWithoutOwner->project_id = $project->id;
         $taskHighPriorityWithoutOwner->priority = 'High';
+        $taskHighPriorityWithoutOwner->skillset = $skillSet;
         $taskHighPriorityWithoutOwner->save();
 
         $taskMediumPriorityWithoutOwner = $this->getNewTask();
         $taskMediumPriorityWithoutOwner->project_id = $project->id;
         $taskMediumPriorityWithoutOwner->priority = 'Medium';
+        $taskMediumPriorityWithoutOwner->skillset = $skillSet;
         $taskMediumPriorityWithoutOwner->save();
 
         // Assigned 30 minutes ago
@@ -445,6 +475,7 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriority->complexity = 5;
         $taskMediumPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskMediumPriority->project_id = $project->id;
+        $taskMediumPriority->skillset = $skillSet;
         $taskMediumPriority->save();
 
         $taskMediumPriority->submitted_for_qa = true;
@@ -484,14 +515,22 @@ class TaskUpdateXpTest extends TestCase
         $project->members = $members;
         $project->save();
 
+        $skillSet = [
+            'PHP',
+            'React',
+            'DevOps'
+        ];
+
         $taskHighPriorityWithoutOwner = $this->getNewTask();
         $taskHighPriorityWithoutOwner->project_id = $project->id;
         $taskHighPriorityWithoutOwner->priority = 'High';
+        $taskHighPriorityWithoutOwner->skillset = $skillSet;
         $taskHighPriorityWithoutOwner->save();
 
         $taskMediumPriorityWithoutOwner = $this->getNewTask();
         $taskMediumPriorityWithoutOwner->project_id = $project->id;
         $taskMediumPriorityWithoutOwner->priority = 'Medium';
+        $taskMediumPriorityWithoutOwner->skillset = $skillSet;
         $taskMediumPriorityWithoutOwner->save();
 
         // Assigned 30 minutes ago
@@ -504,6 +543,7 @@ class TaskUpdateXpTest extends TestCase
         $taskHighPriority->complexity = 5;
         $taskHighPriority->due_date = (new \DateTime())->modify('+1 day')->format('U');
         $taskHighPriority->project_id = $project->id;
+        $taskHighPriority->skillset = $skillSet;
         $taskHighPriority->save();
 
         $taskHighPriority->submitted_for_qa = true;

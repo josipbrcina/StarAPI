@@ -269,7 +269,7 @@ class ProfilePerformance
     {
         $taskPriorityCoefficient = 1;
 
-        //get all projects that user is a member of
+        // Get all projects that user is a member of
         $preSetCollection = GenericModel::getCollection();
         GenericModel::setCollection('projects');
         $taskOwnerProjects = GenericModel::whereIn('members', [$taskOwner->id])
@@ -279,18 +279,23 @@ class ProfilePerformance
 
         $unassignedTasksPriority = [];
 
-        //get all unassigned tasks from projects that user is a member of, and make list of tasks priority
+        // Get all unassigned tasks from projects that user is a member of, and make list of tasks priority
         foreach ($taskOwnerProjects as $project) {
             $projectTasks = GenericModel::where('project_id', '=', $project->id)
                 ->get();
             foreach ($projectTasks as $projectTask) {
-                if (empty($projectTask->owner) && !in_array($projectTask->priority, $unassignedTasksPriority)) {
+                // Let's compare user skills with task skillset
+                $compareSkills = array_intersect($taskOwner->skills, $projectTask->skillset);
+                if (empty($projectTask->owner)
+                    && !in_array($projectTask->priority, $unassignedTasksPriority)
+                    && !empty($compareSkills)
+                ) {
                     $unassignedTasksPriority[$projectTask->id] = $projectTask->priority;
                 }
             }
         }
 
-        //check task priority and compare with list of unassigned tasks priority and set task priority coefficient
+        // Check task priority and compare with list of unassigned tasks priority and set task priority coefficient
         if ($task->priority === 'Low'
             && (in_array('Medium', $unassignedTasksPriority) || in_array('High', $unassignedTasksPriority))
         ) {

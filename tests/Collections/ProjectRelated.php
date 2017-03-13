@@ -34,7 +34,8 @@ trait ProjectRelated
                 'submitted_for_qa' => false,
                 'qa_in_progress' => false,
                 'blocked' => false,
-                'passed_qa' => false
+                'passed_qa' => false,
+                'skillset' => []
             ]
         );
     }

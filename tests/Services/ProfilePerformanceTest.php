@@ -3,6 +3,7 @@
 namespace Tests\Services;
 
 use App\Exceptions\UserInputException;
+use App\GenericModel;
 use App\Helpers\WorkDays;
 use App\Profile;
 use App\Services\ProfilePerformance;
@@ -21,7 +22,9 @@ class ProfilePerformanceTest extends TestCase
     {
         parent::setUp();
 
-        $this->setTaskOwner(Profile::create());
+        $this->setTaskOwner(Profile::create([
+            'skills' => ['PHP']
+        ]));
         $this->profile->xp = 200;
         $this->profile->save();
 
@@ -118,8 +121,8 @@ class ProfilePerformanceTest extends TestCase
         //Test XP diff within time range with XP records
         $out = $pp->aggregateForTimeRange(
             $this->profile,
-            (int) \DateTime::createFromFormat('Y-m-d', $workDays[0])->format('U'),
-            (int) \DateTime::createFromFormat('Y-m-d', $workDays[4])->format('U')
+            (int)\DateTime::createFromFormat('Y-m-d', $workDays[0])->format('U'),
+            (int)\DateTime::createFromFormat('Y-m-d', $workDays[4])->format('U')
         );
 
         $this->assertEquals(5, $out['xpDiff']);
@@ -140,8 +143,8 @@ class ProfilePerformanceTest extends TestCase
         //Test XP diff within time range with XP records
         $out = $pp->aggregateForTimeRange(
             $this->profile,
-            (int) \DateTime::createFromFormat('Y-m-d', $workDays[6])->format('U'),
-            (int) \DateTime::createFromFormat('Y-m-d', $workDays[15])->format('U')
+            (int)\DateTime::createFromFormat('Y-m-d', $workDays[6])->format('U'),
+            (int)\DateTime::createFromFormat('Y-m-d', $workDays[15])->format('U')
         );
 
         $this->assertEquals(10, $out['xpDiff']);
@@ -160,8 +163,8 @@ class ProfilePerformanceTest extends TestCase
 
         $pp = new ProfilePerformance();
         //Test XP diff for time range where there are no XP records
-        $startTime = (int) (new \DateTime())->modify('+50 days')->format('U');
-        $endTime = (int) (new \DateTime())->modify('+55 days')->format('U');
+        $startTime = (int)(new \DateTime())->modify('+50 days')->format('U');
+        $endTime = (int)(new \DateTime())->modify('+55 days')->format('U');
         $out = $pp->aggregateForTimeRange($this->profile, $startTime, $endTime);
 
         $this->assertEquals(0, $out['xpDiff']);
@@ -180,8 +183,8 @@ class ProfilePerformanceTest extends TestCase
 
         $pp = new ProfilePerformance();
         //Test XP diff when first 2 days of check there are no xp records and 3rd day there is one record
-        $twoDaysBeforeFirstWorkDay = (int) (new \DateTime(reset($workDays)))->modify('-2 days')->format('U');
-        $firstWorkDay = (int) \DateTime::createFromFormat('Y-m-d', reset($workDays))->format('U');
+        $twoDaysBeforeFirstWorkDay = (int)(new \DateTime(reset($workDays)))->modify('-2 days')->format('U');
+        $firstWorkDay = (int)\DateTime::createFromFormat('Y-m-d', reset($workDays))->format('U');
 
         $out = $pp->aggregateForTimeRange($this->profile, $twoDaysBeforeFirstWorkDay, $firstWorkDay);
 
@@ -206,7 +209,7 @@ class ProfilePerformanceTest extends TestCase
             $task->project_id = $project->id;
             if ($counter % 2 === 0) {
                 $task->passed_qa = true;
-                $task->timeFinished = (int) $unixDay;
+                $task->timeFinished = (int)$unixDay;
                 $work = $task->work;
                 $work[$this->profile->id]['qa_total_time'] = 1800;
                 $task->work = $work;
@@ -239,7 +242,7 @@ class ProfilePerformanceTest extends TestCase
         // String timestamp
         $unixNow = Carbon::now()->format('U');
         // Integer timestamp
-        $unix2DaysAgo = (int) Carbon::now()->subDays(2)->format('U');
+        $unix2DaysAgo = (int)Carbon::now()->subDays(2)->format('U');
 
         $pp = new ProfilePerformance();
 
@@ -252,7 +255,7 @@ class ProfilePerformanceTest extends TestCase
         $this->assertEquals($out, $this->getExpectedException());
 
         // Integer timestamp
-        $unixNowInteger = (int) Carbon::now()->format('U');
+        $unixNowInteger = (int)Carbon::now()->format('U');
         // String timestamp
         $unix2DaysAgoString = Carbon::now()->subDays(2)->format('U');
 
@@ -263,5 +266,155 @@ class ProfilePerformanceTest extends TestCase
         );
         $out = $pp->aggregateForTimeRange($this->profile, $unix2DaysAgoString, $unixNowInteger);
         $this->assertEquals($out, $this->getExpectedException());
+    }
+
+    /**
+     * Test profile performance task priority coefficient = 1.0
+     */
+    public function testProfilePerformanceTaskPriorityCoefficientNoDeduction()
+    {
+        GenericModel::setCollection('tasks');
+        GenericModel::truncate();
+        // Get new project
+        $project = $this->getNewProject();
+        $members = [$this->profile->id];
+        $project->members = $members;
+        $project->save();
+
+        // Create skillsets for tasks
+        $skillSetMatch = [
+            'PHP',
+            'Planning',
+            'React'
+        ];
+
+        $skillSet = [
+            'React',
+            'DevOps'
+        ];
+
+        // Create some tasks and set skillset
+        $lowPriorityTask = $this->getNewTask();
+        $lowPriorityTask->project_id = $project->id;
+        $lowPriorityTask->priority = 'Low';
+        $lowPriorityTask->skillset = $skillSetMatch;
+        $lowPriorityTask->save();
+
+        $mediumPriorityTask = $this->getNewTask();
+        $mediumPriorityTask->project_id = $project->id;
+        $mediumPriorityTask->priority = 'Medium';
+        $mediumPriorityTask->skillset = $skillSet;
+        $mediumPriorityTask->save();
+
+        $highPriorityTask = $this->getNewTask();
+        $highPriorityTask->project_id = $project->id;
+        $highPriorityTask->priority = 'High';
+        $highPriorityTask->skillset = $skillSet;
+        $highPriorityTask->save();
+
+        // Test task priority coefficient
+        $pp = new ProfilePerformance();
+        $out = $pp->taskPriorityCoefficient($this->profile, $lowPriorityTask);
+        $this->assertEquals(1.0, $out);
+    }
+
+    /**
+     * Test profile performance task priority coefficient = 0.5
+     */
+    public function testProfilePerformanceTaskPriorityCoefficientMediumDeduction()
+    {
+        GenericModel::setCollection('tasks');
+        GenericModel::truncate();
+        // Get new project
+        $project = $this->getNewProject();
+        $members = [$this->profile->id];
+        $project->members = $members;
+        $project->save();
+
+        // Create skillsets for tasks
+        $skillSetMatch = [
+            'PHP',
+            'Planning',
+            'React'
+        ];
+
+        $skillSet = [
+            'React',
+            'DevOps'
+        ];
+
+        // Create some tasks and set skillset
+        $lowPriorityTask = $this->getNewTask();
+        $lowPriorityTask->project_id = $project->id;
+        $lowPriorityTask->priority = 'Low';
+        $lowPriorityTask->skillset = $skillSetMatch;
+        $lowPriorityTask->save();
+
+        $mediumPriorityTask = $this->getNewTask();
+        $mediumPriorityTask->project_id = $project->id;
+        $mediumPriorityTask->priority = 'Medium';
+        $mediumPriorityTask->skillset = $skillSetMatch;
+        $mediumPriorityTask->save();
+
+        $highPriorityTask = $this->getNewTask();
+        $highPriorityTask->project_id = $project->id;
+        $highPriorityTask->priority = 'High';
+        $highPriorityTask->skillset = $skillSet;
+        $highPriorityTask->save();
+
+        // Test task priority coefficient
+        $pp = new ProfilePerformance();
+        $out = $pp->taskPriorityCoefficient($this->profile, $lowPriorityTask);
+        $this->assertEquals(0.5, $out);
+    }
+
+    /**
+     * Test profile performance task priority coefficient = 0.8
+     */
+    public function testProfilePerformanceTaskPriorityCoefficientHighDeduction()
+    {
+        GenericModel::setCollection('tasks');
+        GenericModel::truncate();
+        // Get new project
+        $project = $this->getNewProject();
+        $members = [$this->profile->id];
+        $project->members = $members;
+        $project->save();
+
+        // Create skillsets for tasks
+        $skillSetMatch = [
+            'PHP',
+            'Planning',
+            'React'
+        ];
+
+        $skillSet = [
+            'React',
+            'DevOps'
+        ];
+
+        // Create some tasks and set skillset
+        $lowPriorityTask = $this->getNewTask();
+        $lowPriorityTask->project_id = $project->id;
+        $lowPriorityTask->priority = 'Low';
+        $lowPriorityTask->skillset = $skillSet;
+        $lowPriorityTask->save();
+
+        $mediumPriorityTask = $this->getNewTask();
+        $mediumPriorityTask->project_id = $project->id;
+        $mediumPriorityTask->priority = 'Medium';
+        $mediumPriorityTask->skillset = $skillSet;
+        $mediumPriorityTask->save();
+
+        $highPriorityTask = $this->getNewTask();
+        $highPriorityTask->project_id = $project->id;
+        $highPriorityTask->priority = 'High';
+        $highPriorityTask->skillset = $skillSetMatch;
+        $highPriorityTask->save();
+
+        // Test task priority coefficient
+        $pp = new ProfilePerformance();
+        $out = $pp->taskPriorityCoefficient($this->profile, $mediumPriorityTask);
+        $this->assertEquals(0.8, $out);
     }
 }
