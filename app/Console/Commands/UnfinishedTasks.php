@@ -5,7 +5,13 @@ namespace App\Console\Commands;
 use App\Helpers\Slack;
 use Illuminate\Console\Command;
 use App\GenericModel;
+use Carbon\Carbon;
+use App\Helpers\InputHandler;
 
+/**
+ * Class UnfinishedTasks
+ * @package App\Console\Commands
+ */
 class UnfinishedTasks extends Command
 {
     /**
@@ -29,11 +35,11 @@ class UnfinishedTasks extends Command
      */
     public function handle()
     {
-        //get all projects
+        // Get all projects
         GenericModel::setCollection('projects');
         $projects = GenericModel::all();
 
-        //get all admin users
+        // Get all admin users
         GenericModel::setCollection('profiles');
         $admins = GenericModel::where('admin', '=', true)->get();
 
@@ -57,25 +63,27 @@ class UnfinishedTasks extends Command
         $futureSprints = [];
         $futureSprintsStartDates = [];
 
-        $unixNow = (new \DateTime())->format('U');
-        $checkDay = date('Y-m-d', $unixNow);
+        $unixNow = Carbon::now()->format('U');
+        $checkDay = Carbon::now()->format('Y-m-d');
 
-        //get all unfinished tasks from ended sprints and get all future sprints on project
+        // Get all unfinished tasks from ended sprints and get all future sprints on project
         GenericModel::setCollection('tasks');
         foreach ($sprints as $sprint) {
-            $sprintStartDueDate = date('Y-m-d', $sprint->start);
-            $sprintEndDueDate = date('Y-m-d', $sprint->end);
+            $sprintStartDueDate =
+                Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($sprint->start))->format('Y-m-d');
+            $sprintEndDueDate =
+                Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($sprint->end))->format('Y-m-d');
             if ($sprintEndDueDate < $checkDay) {
                 $endedSprints[$sprint->project_id][] = $sprint;
 
-                //get all tasks and check if there are unfinished tasks
+                // Get all tasks and check if there are unfinished tasks
                 $sprintTasks = GenericModel::where('sprint_id', '=', $sprint->id)->get();
                 foreach ($sprintTasks as $task) {
                     if ($task->passed_qa !== true) {
                         $sprintEndedTasks[$task->id] = $task;
                     }
                 }
-                //check start and end due dates for future sprints
+                // Check start and end due dates for future sprints
             } elseif ($unixNow < $sprint->start || $checkDay === $sprintStartDueDate ||
                 ($unixNow > $sprint->start && $checkDay <= $sprintEndDueDate)
             ) {
@@ -84,7 +92,7 @@ class UnfinishedTasks extends Command
             }
         }
 
-        //calculate on which projects are missing future sprints
+        // Calculate on which projects are missing future sprints
         $missingSprints = array_diff_key($endedSprints, $futureSprints);
         $adminReport = [];
 
@@ -93,11 +101,11 @@ class UnfinishedTasks extends Command
         }
 
         if (!empty($sprintEndedTasks)) {
-            /*ping on slack admins if there are no future sprints created so we can move unfinished tasks from sprint to
+            /* Ping on slack admins if there are no future sprints created so we can move unfinished tasks from sprint to
             following sprint on sprint end date*/
             foreach ($adminReport as $projectName) {
                 foreach ($admins as $admin) {
-                    if ($admin->slack) {
+                    if ($admin->slack && $admin->active) {
                         $recipient = '@' . $admin->slack;
                         $message = 'Hey! There are no future sprints created to move unfinished tasks from ended ' .
                             'sprints on project : *' . $projectName . '*';
@@ -106,7 +114,7 @@ class UnfinishedTasks extends Command
                 }
             }
 
-            //move all unfinished tasks from ended sprint to following one
+            // Move all unfinished tasks from ended sprint to following one
             foreach ($futureSprints as $projectId => $futureSprintsArray) {
                 foreach ($futureSprintsArray as $futureSprint) {
                     if ($futureSprint->start === min($futureSprintsStartDates[$futureSprint->project_id])) {

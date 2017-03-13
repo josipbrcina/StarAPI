@@ -9,6 +9,10 @@ use App\Profile;
 use App\Helpers\InputHandler;
 use App\Helpers\Slack;
 
+/**
+ * Class NotifyAdminsTaskPriority
+ * @package App\Console\Commands
+ */
 class NotifyAdminsTaskPriority extends Command
 {
     const HIGH = 'High';
@@ -30,9 +34,7 @@ class NotifyAdminsTaskPriority extends Command
     protected $description = 'Notify admins and Pos on slack about task priority deadlines.';
 
     /**
-     * Create a new command instance.
-     *
-     * @return void
+     * NotifyAdminsTaskPriority constructor.
      */
     public function __construct()
     {
@@ -49,25 +51,22 @@ class NotifyAdminsTaskPriority extends Command
         $preSetCollection = GenericModel::getCollection();
         GenericModel::setCollection('tasks');
 
-        $tasks = GenericModel::all();
-        $unixTimeNow = Carbon::now()->format('U');
-        $unixTime2Days = Carbon::now()->addDays(2)->format('U');
-        $unixTime7Days = Carbon::now()->addDays(7)->format('U');
-        $unixTime14Days = Carbon::now()->addDays(14)->format('U');
-        $unixTime28Days = Carbon::now()->addDays(28)->format('U');
+        // Get all tasks with due_date within next 28 days
+        $unixTime28Days = (int) Carbon::now()->addDays(28)->format('U');
+        $tasks = GenericModel::where('due_date', '<=', $unixTime28Days)
+            ->get();
 
-        $tasksDueDateNextTwoDays = [];
+        $unixTime2Days = (int) Carbon::now()->addDays(2)->format('U');
+        $unixTime7Days = (int) Carbon::now()->addDays(7)->format('U');
+        $unixTime14Days = (int) Carbon::now()->addDays(14)->format('U');
+        $unixTime28Days = (int) Carbon::now()->addDays(28)->format('U');
+
         $tasksDueDates = [];
 
         foreach ($tasks as $task) {
             if (empty($task->owner)) {
                 $taskDueDate = InputHandler::getUnixTimestamp($task->due_date);
-                //get task if task priority is High and due_date is in next 2 days
-                if ($taskDueDate >= $unixTimeNow && $taskDueDate <= $unixTime2Days && $task->priority === self::HIGH) {
-                    $tasksDueDateNextTwoDays[$task->project_id][] = $task;
-                }
-
-                //check if task priority is High and due_date is between next 2-7 days, add counter
+                // Check if task priority is High and due_date is between next 2-7 days, add counter
                 if ($taskDueDate > $unixTime2Days && $taskDueDate <= $unixTime7Days && $task->priority === self::HIGH) {
                     if (!key_exists($task->project_id, $tasksDueDates)) {
                         $tasksDueDates[$task->project_id] = $this->getTaskDueDateArrayStructure(self::HIGH);
@@ -75,7 +74,7 @@ class NotifyAdminsTaskPriority extends Command
                         $tasksDueDates[$task->project_id]['High']++;
                     }
                 }
-                //check if task priority is Medium and due_date is between next 8-14 days, add counter
+                // Check if task priority is Medium and due_date is between next 8-14 days, add counter
                 if ($taskDueDate > $unixTime7Days && $taskDueDate <= $unixTime14Days && $task->priority
                     === self::MEDIUM
                 ) {
@@ -85,7 +84,7 @@ class NotifyAdminsTaskPriority extends Command
                         $tasksDueDates[$task->project_id]['Medium']++;
                     }
                 }
-                //check if task priority is Low and due_date is between next 15-28 days, add counter
+                // Check if task priority is Low and due_date is between next 15-28 days, add counter
                 if ($taskDueDate > $unixTime14Days && $taskDueDate <= $unixTime28Days && $task->priority
                     === self::LOW
                 ) {
@@ -101,10 +100,10 @@ class NotifyAdminsTaskPriority extends Command
         $projectOwnerIds = [];
         $projects = [];
 
-        //Get all tasks projects and project owner IDs
+        // Get all tasks projects and project owner IDs
         GenericModel::setCollection('projects');
-        $readProjectIdsFrom = array_merge($tasksDueDateNextTwoDays, $tasksDueDates);
-        foreach ($readProjectIdsFrom as $projectId => $taskStats) {
+
+        foreach ($tasksDueDates as $projectId => $taskCount) {
             $project = GenericModel::where('_id', '=', $projectId)->first();
             $projects[$projectId] = $project;
             if ($project->acceptedBy) {
@@ -114,37 +113,18 @@ class NotifyAdminsTaskPriority extends Command
 
         $recipients = Profile::all();
 
-        //send slack notification to all admins and POs about task priority deadlines
+        // Send slack notification to all active admins and POs about task priority deadlines
         foreach ($recipients as $recipient) {
-            if ($recipient->admin === true || in_array($recipient->id, $projectOwnerIds) && $recipient->slack) {
+            if ($recipient->admin === true || in_array($recipient->id, $projectOwnerIds)
+                && $recipient->slack
+                && $recipient->active
+            ) {
                 foreach ($projects as $projectToNotify) {
                     if ($recipient->admin !== true && $recipient->id !== $projectToNotify->acceptedBy) {
                         continue;
                     }
                     $sendTo = '@' . $recipient->slack;
-                    $webDomain = \Config::get('sharedSettings.internalConfiguration.webDomain');
-                    //send notification per project about tasks deadline in next 2 days for High priority tasks
-                    foreach ($tasksDueDateNextTwoDays as $taskProjectId => $taskList) {
-                        if ($taskProjectId === $projectToNotify->id) {
-                            foreach ($taskList as $singleTask) {
-                                $message = '*'
-                                    . $projectToNotify->name
-                                    . '* - Task *'
-                                    . $singleTask->title
-                                    . '* due date in next *2 days* '
-                                    . $webDomain
-                                    . 'projects/'
-                                    . $singleTask->project_id
-                                    . '/sprints/'
-                                    . $singleTask->sprint_id
-                                    . '/tasks/'
-                                    . $singleTask->_id;
-                                Slack::sendMessage($sendTo, $message, Slack::LOW_PRIORITY);
-                            }
-                        }
-                    }
-
-                    /*Send notification per project about task deadlines for High priority in next 7 days,
+                    /* Send notification per project about task deadlines for High priority in next 7 days,
                     Medium priority in next 14 days, and low priority in next 28 days*/
                     if (key_exists($projectToNotify->id, $tasksDueDates)) {
                         foreach ($tasksDueDates[$projectToNotify->id] as $priority => $tasksCounted) {

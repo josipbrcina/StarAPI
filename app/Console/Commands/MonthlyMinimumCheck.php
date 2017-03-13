@@ -85,14 +85,14 @@ class MonthlyMinimumCheck extends Command
                     . '*';
 
                 // Notify employee
-                if ($profile->slack) {
+                if ($profile->slack && $profile->active) {
                     $recipient = '@' . $profile->slack;
                     Slack::sendMessage($recipient, $userMessage, Slack::MEDIUM_PRIORITY);
                 }
 
                 // Notify admins
                 foreach ($admins as $admin) {
-                    if ($admin->slack) {
+                    if ($admin->slack && $admin->active) {
                         $recipient = '@' . $admin->slack;
                         Slack::sendMessage($recipient, $adminMessage, Slack::MEDIUM_PRIORITY);
                     }

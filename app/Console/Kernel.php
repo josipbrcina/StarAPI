@@ -16,7 +16,7 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\SprintReminder::class,
+        Commands\SprintReminderForUnassignedTasks::class,
         Commands\XpDeduction::class,
         Commands\UnfinishedTasks::class,
         Commands\EmailProfilePerformance::class,
@@ -35,7 +35,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('sprint:remind')
+        $schedule->command('sprint:remind:unassigned:tasks')
             ->twiceDaily(8, 14);
 
         $schedule->command('xp:activity:auto-deduct')

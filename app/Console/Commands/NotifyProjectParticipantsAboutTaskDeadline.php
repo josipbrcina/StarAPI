@@ -42,7 +42,7 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
 
         // Unix timestamp 7 days from now at the end of the day
         $unixSevenDaysFromNow = (int) Carbon::now()->addDays(7)->format('U')
-            + (int) Carbon::now()->addDays(7)->secondsUntilEndOfDay();
+            + (int)Carbon::now()->addDays(7)->secondsUntilEndOfDay();
 
         // Get all unfinished tasks with due_date within next 7 days
         $tasks = GenericModel::where('due_date', '<=', $unixSevenDaysFromNow)
@@ -54,7 +54,7 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
         foreach ($tasks as $task) {
             $taskDueDate = Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($task->due_date))
                 ->format('Y-m-d');
-            
+
             $recipients = [];
 
             // Get all project members of project that task belongs to
@@ -62,10 +62,12 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
             $taskProject = GenericModel::where('_id', '=', $task->project_id)->first();
             foreach ($taskProject->members as $memberId) {
                 $memberProfile = Profile::find($memberId);
-                $profileSkills = $memberProfile->skills;
-                $taskSkills = $task->skillset;
-                $compareSkills = array_intersect($profileSkills, $taskSkills);
-                if ($memberProfile !== null && $memberProfile->slack && !empty($compareSkills)) {
+                $compareSkills = array_intersect($memberProfile->skills, $task->skillset);
+                if ($memberProfile !== null
+                    && $memberProfile->slack
+                    && !empty($compareSkills)
+                    && $memberProfile->active
+                ) {
                     $recipients[] = '@' . $memberProfile->slack;
                 }
             }
@@ -76,7 +78,7 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
                 ->get();
 
             foreach ($adminsAndPo as $adminOrPo) {
-                if ($adminOrPo->slack) {
+                if ($adminOrPo->slack && $adminOrPo->active) {
                     $recipients[] = '@' . $adminOrPo->slack;
                 }
             }

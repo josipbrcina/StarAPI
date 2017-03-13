@@ -6,26 +6,27 @@ use App\Helpers\InputHandler;
 use App\Helpers\Slack;
 use Illuminate\Console\Command;
 use App\GenericModel;
+use Carbon\Carbon;
 
 /**
  * Class SprintReminder
  * @package App\Console\Commands
  */
-class SprintReminder extends Command
+class SprintReminderForUnassignedTasks extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'sprint:remind';
+    protected $signature = 'sprint:remind:unassigned:tasks';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Check sprint tasks due dates and ping task owner 1 day before task end_due_date';
+    protected $description = 'Check active projects sprints and ping participants about unassigned tasks.';
 
     /**
      * Execute the console command.
@@ -40,7 +41,7 @@ class SprintReminder extends Command
         $sprints = [];
         $tasks = [];
 
-        $dateCheck = (new \DateTime())->format('Y-m-d');
+        $dateCheck = Carbon::now()->format('Y-m-d');
 
         // Get all active projects, members of projects and sprints
         foreach ($projects as $project) {
@@ -49,8 +50,10 @@ class SprintReminder extends Command
                 GenericModel::setCollection('sprints');
                 $projectSprints = GenericModel::where('project_id', '=', $project->id)->get();
                 foreach ($projectSprints as $sprint) {
-                    $sprintStartDueDate = date('Y-m-d', $sprint->start);
-                    $sprintEndDueDate = date('Y-m-d', $sprint->end);
+                    $sprintStartDueDate =
+                        Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($sprint->start))->format('Y-m-d');
+                    $sprintEndDueDate =
+                        Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($sprint->end))->format('Y-m-d');
                     if ($dateCheck >= $sprintStartDueDate && $dateCheck <= $sprintEndDueDate) {
                         $sprints[$sprint->id] = $sprint;
                     }
@@ -97,18 +100,18 @@ class SprintReminder extends Command
                     continue;
                 }
 
+                $unassignedTasks = $taskCount[$project->_id];
+                $message = '*Reminder*:'
+                    . 'There are * '
+                    . $unassignedTasks
+                    . '* unassigned tasks on active sprints'
+                    . ', for project *'
+                    . $project->name
+                    . '*';
+
                 foreach ($members as $member) {
-                    if (in_array($member->_id, $project->members) && $member->slack) {
+                    if (in_array($member->_id, $project->members) && $member->slack && $member->active) {
                         $recipient = '@' . $member->slack;
-                        $projectName = $project->name;
-                        $unassignedTasks = $taskCount[$project->_id];
-                        $message = '*Reminder*:'
-                            . 'There are * '
-                            . $unassignedTasks
-                            . '* unassigned tasks on active sprints'
-                            . ', for project *'
-                            . $projectName
-                            . '*';
                         Slack::sendMessage($recipient, $message, Slack::MEDIUM_PRIORITY);
                     }
                 }

@@ -69,7 +69,7 @@ class EmailProfilePerformance extends Command
                 $view = 'emails.profile.performance';
                 $subject = Config::get('mail.private_mail_subject');
 
-                if ($profile->email) {
+                if ($profile->email && $profile->active) {
                     MailSend::send($view, $data, $profile, $subject);
                 }
             }
@@ -90,7 +90,9 @@ class EmailProfilePerformance extends Command
                 : 'emails.profile.admin-performance-report';
             $subject = Config::get('mail.admin_performance_email_subject');
 
-            MailSend::send($view, ['reports' => $adminAggregation], $recipient, $subject);
+            if ($recipient->active) {
+                MailSend::send($view, ['reports' => $adminAggregation], $recipient, $subject);
+            }
         }
     }
 }

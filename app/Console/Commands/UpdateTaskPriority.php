@@ -9,6 +9,10 @@ use Illuminate\Console\Command;
 use App\Profile;
 use App\Helpers\Slack;
 
+/**
+ * Class UpdateTaskPriority
+ * @package App\Console\Commands
+ */
 class UpdateTaskPriority extends Command
 {
     const HIGH = 'High';
@@ -57,7 +61,7 @@ class UpdateTaskPriority extends Command
         foreach ($tasks as $task) {
             if (empty($task->owner)) {
                 $taskDueDate = InputHandler::getUnixTimestamp($task->due_date);
-                //check if task due_date is in next 7 days and switch task priority to High if not set already
+                // Check if task due_date is in next 7 days and switch task priority to High if not set already
                 if ($taskDueDate >= $unixTimeNow && $taskDueDate <= $unixTime7Days && $task->priority !== self::HIGH) {
                     $task->priority = self::HIGH;
                     $task->save();
@@ -68,7 +72,7 @@ class UpdateTaskPriority extends Command
                         $tasksBumpedPerProject[$task->project_id]['High']++;
                     }
                 }
-                /*check if task due_date is between next 8 - 14 days and switch task priority to Medium if not set
+                /* Check if task due_date is between next 8 - 14 days and switch task priority to Medium if not set
                  already*/
                 if ($taskDueDate > $unixTime7Days && $taskDueDate <= $unixTime14Days && $task->priority
                     !== self::MEDIUM
@@ -88,7 +92,7 @@ class UpdateTaskPriority extends Command
         $projectOwnerIds = [];
         $projects = [];
 
-        //Get all tasks projects and project owner IDs
+        // Get all tasks projects and project owner IDs
         GenericModel::setCollection('projects');
         foreach ($tasksBumpedPerProject as $projectId => $count) {
             $project = GenericModel::where('_id', '=', $projectId)->first();
@@ -100,9 +104,12 @@ class UpdateTaskPriority extends Command
 
         $recipients = Profile::all();
 
-        //send slack notification to all admins and POs about task priority change
+        // send slack notification to all admins and POs about task priority change
         foreach ($recipients as $recipient) {
-            if ($recipient->admin === true || in_array($recipient->id, $projectOwnerIds) && $recipient->slack) {
+            if ($recipient->admin === true || in_array($recipient->id, $projectOwnerIds)
+                && $recipient->slack
+                && $recipient->active
+            ) {
                 foreach ($projects as $projectToNotify) {
                     if ($recipient->admin !== true && $recipient->id !== $projectToNotify->acceptedBy) {
                         continue;
