@@ -41,7 +41,7 @@ class EmailProfilePerformance extends Command
 
         // Set time range
         $daysAgo = (int) $this->argument('daysAgo');
-        $unixNow = (int) (new \DateTime())->format('U');
+        $unixNow = (int) Carbon::now()->format('U');
         $unixAgo = $unixNow - $daysAgo * 24 * 60 * 60;
 
         $forAccountants = $this->option('accountants');

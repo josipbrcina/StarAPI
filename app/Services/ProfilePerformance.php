@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Exceptions\UserInputException;
 use App\GenericModel;
 use App\Helpers\InputHandler;
-use App\Helpers\WorkDays;
 use App\Profile;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
@@ -20,9 +20,15 @@ class ProfilePerformance
      * @param $unixStart
      * @param $unixEnd
      * @return array
+     * @throws UserInputException
      */
     public function aggregateForTimeRange(Profile $profile, $unixStart, $unixEnd)
     {
+        // Make sure that unixStart and unixEnd are integer format
+        if (!is_int($unixStart) || !is_int($unixEnd)) {
+            throw new UserInputException('Invalid time range input. Must be type of integer');
+        }
+
         // Get all profile tasks
         GenericModel::setCollection('tasks');
         $profileTasksUnfinished = GenericModel::where('owner', '=', $profile->id)

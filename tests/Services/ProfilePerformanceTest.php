@@ -2,9 +2,11 @@
 
 namespace Tests\Services;
 
+use App\Exceptions\UserInputException;
 use App\Helpers\WorkDays;
 use App\Profile;
 use App\Services\ProfilePerformance;
+use Carbon\Carbon;
 use Tests\Collections\ProfileRelated;
 use Tests\Collections\ProjectRelated;
 use Tests\TestCase;
@@ -116,8 +118,8 @@ class ProfilePerformanceTest extends TestCase
         //Test XP diff within time range with XP records
         $out = $pp->aggregateForTimeRange(
             $this->profile,
-            \DateTime::createFromFormat('Y-m-d', $workDays[0])->format('U'),
-            \DateTime::createFromFormat('Y-m-d', $workDays[4])->format('U')
+            (int) \DateTime::createFromFormat('Y-m-d', $workDays[0])->format('U'),
+            (int) \DateTime::createFromFormat('Y-m-d', $workDays[4])->format('U')
         );
 
         $this->assertEquals(5, $out['xpDiff']);
@@ -138,8 +140,8 @@ class ProfilePerformanceTest extends TestCase
         //Test XP diff within time range with XP records
         $out = $pp->aggregateForTimeRange(
             $this->profile,
-            \DateTime::createFromFormat('Y-m-d', $workDays[6])->format('U'),
-            \DateTime::createFromFormat('Y-m-d', $workDays[15])->format('U')
+            (int) \DateTime::createFromFormat('Y-m-d', $workDays[6])->format('U'),
+            (int) \DateTime::createFromFormat('Y-m-d', $workDays[15])->format('U')
         );
 
         $this->assertEquals(10, $out['xpDiff']);
@@ -158,8 +160,8 @@ class ProfilePerformanceTest extends TestCase
 
         $pp = new ProfilePerformance();
         //Test XP diff for time range where there are no XP records
-        $startTime = (new \DateTime())->modify('+50 days')->format('U');
-        $endTime = (new \DateTime())->modify('+55 days')->format('U');
+        $startTime = (int) (new \DateTime())->modify('+50 days')->format('U');
+        $endTime = (int) (new \DateTime())->modify('+55 days')->format('U');
         $out = $pp->aggregateForTimeRange($this->profile, $startTime, $endTime);
 
         $this->assertEquals(0, $out['xpDiff']);
@@ -178,8 +180,8 @@ class ProfilePerformanceTest extends TestCase
 
         $pp = new ProfilePerformance();
         //Test XP diff when first 2 days of check there are no xp records and 3rd day there is one record
-        $twoDaysBeforeFirstWorkDay = (new \DateTime(reset($workDays)))->modify('-2 days')->format('U');
-        $firstWorkDay = \DateTime::createFromFormat('Y-m-d', reset($workDays))->format('U');
+        $twoDaysBeforeFirstWorkDay = (int) (new \DateTime(reset($workDays)))->modify('-2 days')->format('U');
+        $firstWorkDay = (int) \DateTime::createFromFormat('Y-m-d', reset($workDays))->format('U');
 
         $out = $pp->aggregateForTimeRange($this->profile, $twoDaysBeforeFirstWorkDay, $firstWorkDay);
 
@@ -227,5 +229,39 @@ class ProfilePerformanceTest extends TestCase
         $this->assertEquals(0, $out['totalPayoutInternal']);
         $this->assertEquals(0, $out['realPayoutInternal']);
         $this->assertEquals(1.5, $out['hoursDoingQA']);
+    }
+
+    /**
+     * Test profile performance aggregate for time range wrong input format
+     */
+    public function testProfilePerformanceAggregateForTimeRangeWrongInput()
+    {
+        // String timestamp
+        $unixNow = Carbon::now()->format('U');
+        // Integer timestamp
+        $unix2DaysAgo = (int) Carbon::now()->subDays(2)->format('U');
+
+        $pp = new ProfilePerformance();
+
+        $this->setExpectedException(
+            UserInputException::class,
+            'Invalid time range input. Must be type of integer',
+            400
+        );
+        $out = $pp->aggregateForTimeRange($this->profile, $unix2DaysAgo, $unixNow);
+        $this->assertEquals($out, $this->getExpectedException());
+
+        // Integer timestamp
+        $unixNowInteger = (int) Carbon::now()->format('U');
+        // String timestamp
+        $unix2DaysAgoString = Carbon::now()->subDays(2)->format('U');
+
+        $this->setExpectedException(
+            UserInputException::class,
+            'Invalid time range input. Must be type of integer',
+            400
+        );
+        $out = $pp->aggregateForTimeRange($this->profile, $unix2DaysAgoString, $unixNowInteger);
+        $this->assertEquals($out, $this->getExpectedException());
     }
 }
