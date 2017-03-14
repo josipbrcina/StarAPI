@@ -40,12 +40,15 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
     {
         GenericModel::setCollection('tasks');
 
+        $unixNow = (int) Carbon::now()->format('U');
         // Unix timestamp 7 days from now at the end of the day
         $unixSevenDaysFromNow = (int) Carbon::now()->addDays(7)->format('U')
             + (int)Carbon::now()->addDays(7)->secondsUntilEndOfDay();
 
         // Get all unfinished tasks with due_date within next 7 days
         $tasks = GenericModel::where('due_date', '<=', $unixSevenDaysFromNow)
+            ->where('due_date', '>=', $unixNow)
+            ->where('ready', '=', true)
             ->where('passed_qa', '=', false)
             ->get();
 
