@@ -51,6 +51,10 @@ class ProfileController extends Controller
         return $this->jsonSuccess($profiles);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getPerformance(Request $request)
     {
         // Default last month
@@ -73,6 +77,10 @@ class ProfileController extends Controller
         return $this->jsonSuccess($performance->aggregateForTimeRange($profile, $startDate, $endDate));
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getPerformancePerTask(Request $request)
     {
         GenericModel::setCollection('tasks');
@@ -88,6 +96,103 @@ class ProfileController extends Controller
         $performance = new ProfilePerformance();
 
         return $this->jsonSuccess($performance->perTask($task));
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getFeedback(Request $request)
+    {
+        GenericModel::setCollection('feedbacks');
+
+        $feedback = GenericModel::where('userId', '=', $request->route('id'))
+            ->get();
+
+        // Check if collection has got any models returned
+        if (count($feedback) > 0) {
+            return $this->jsonSuccess($feedback);
+        }
+
+        return $this->jsonError(
+            ['No feedback found.'],
+            404
+        );
+    }
+
+    /**
+     * @param Request $request
+     * @return GenericModel|\Illuminate\Http\JsonResponse
+     */
+    public function storeFeedback(Request $request)
+    {
+        $profile = Profile::find($request->route('id'));
+
+        // Check if user id exists
+        if (!$profile) {
+            return $this->jsonError(
+                ['Profile not found'],
+                404
+            );
+        }
+
+        $requestFields = $request->all();
+        if (empty($requestFields)) {
+            $requestFields = [];
+        }
+
+        // Validate request fields
+        $allowedFields = [
+            'createdAt',
+            'answers'
+        ];
+
+        $validateFields = array_diff_key($requestFields, array_flip($allowedFields));
+
+        if (!empty($validateFields)
+            || !key_exists('createdAt', $requestFields)
+            || !key_exists('answers', $requestFields)
+        ) {
+            return $this->jsonError('Invalid input. Request must have two fields - createdAt and answers');
+        }
+
+        $errors = [];
+
+        if (is_array($requestFields['createdAt'])) {
+            $errors[] = 'Invalid input format. createdAt field must not be type of array.';
+        }
+
+        if (!is_array($requestFields['answers'])) {
+            $errors[] = 'Invalid input format. answers field must be type of array';
+        }
+
+        if (count($errors) > 0) {
+            return $this->jsonError($errors);
+        }
+
+        // Validate createdAt field timestamp format
+        try {
+            InputHandler::getUnixTimestamp($requestFields['createdAt']);
+        } catch (\Exception $e) {
+            return $this->jsonError($e->getMessage() . ' on createdAt field.');
+        }
+
+        // After all validations let's save model to feedbacks collection
+        GenericModel::setCollection('feedbacks');
+
+        $feedback = new GenericModel(
+            [
+                'userId' => $request->route('id'),
+                'createdAt' => $requestFields['createdAt'],
+                'answers' => $requestFields['answers']
+            ]
+        );
+
+        if ($feedback->save()) {
+            return $this->jsonSuccess($feedback);
+        }
+
+        return $this->jsonError('Issue with saving feedback.');
     }
 
     /**

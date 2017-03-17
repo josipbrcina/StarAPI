@@ -30,6 +30,8 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
     Route::group(['middleware' => ['jwt.auth', 'jwt.refresh', 'acl']], function () {
         Route::put('profiles/changePassword', 'ProfileController@changePassword');
         Route::get('profiles/{id}/performance', 'ProfileController@getPerformance');
+        Route::get('profiles/{id}/feedback', 'ProfileController@getFeedback');
+        Route::post('profiles/{id}/feedback', 'ProfileController@storeFeedback');
         Route::resource('profiles', 'ProfileController');
         Route::resource('validations', 'ValidationController');
         Route::get('projects/{id}/uploads', 'FileUploadController@getProjectUploads');
