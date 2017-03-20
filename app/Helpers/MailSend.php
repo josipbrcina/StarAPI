@@ -2,6 +2,12 @@
 
 namespace App\Helpers;
 
+use Illuminate\Support\Facades\Config;
+
+/**
+ * Class MailSend
+ * @package App\Helpers
+ */
 class MailSend
 {
     /**
@@ -14,11 +20,11 @@ class MailSend
      */
     public static function send($view, $data, $profile, $subject)
     {
-        $mailConfig = \Config::get('mail.emails_enabled');
+        $mailConfig = Config::get('mail.emails_enabled');
 
         if ($mailConfig === true) {
-            $emailFrom = \Config::get('mail.private_mail_from');
-            $emailName = \Config::get('mail.private_mail_name');
+            $emailFrom = Config::get('mail.private_mail_from');
+            $emailName = Config::get('mail.private_mail_name');
 
             \Mail::send($view, $data, function ($message) use (
                 $profile,
