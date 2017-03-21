@@ -5,6 +5,7 @@ namespace App\Listeners;
 use App\GenericModel;
 use App\Profile;
 use App\Services\ProfilePerformance;
+use App\Helpers\ProfileOverall;
 
 class TaskStatusTimeCalculation
 {
@@ -193,6 +194,12 @@ class TaskStatusTimeCalculation
                 $work[$task->owner]['workTrackTimestamp'] = $unixTime;
 
                 $task->work = $work;
+
+                // Update profile overall stats
+                $profileOverall = ProfileOverall::getProfileOverallRecord($taskOwnerProfile);
+                $profileOverall->totalEarned += $task->payout;
+                $profileOverall->profit = $profileOverall->totalEarned - $profileOverall->totalCost;
+                $profileOverall->save();
             }
         }
 

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Helpers\MailSend;
+use App\Helpers\ProfileOverall;
 use App\Profile;
 use App\Services\ProfilePerformance;
 use Illuminate\Console\Command;
@@ -48,8 +49,8 @@ class EmailProfilePerformance extends Command
 
         // If option is passed set date range from 1st day of current month until last day of current month
         if ($forAccountants) {
-            $unixNow = Carbon::now()->endOfMonth()->format('U');
-            $unixAgo = Carbon::now()->firstOfMonth()->format('U');
+            $unixNow = (int) Carbon::now()->endOfMonth()->format('U');
+            $unixAgo = (int) Carbon::now()->firstOfMonth()->format('U');
         }
 
         $adminAggregation = [];
@@ -61,8 +62,8 @@ class EmailProfilePerformance extends Command
 
             $data = $performance->aggregateForTimeRange($profile, $unixAgo, $unixNow);
             $data['name'] = $profile->name;
-            $data['fromDate'] = \DateTime::createFromFormat('U', $unixAgo)->format('Y-m-d');
-            $data['toDate'] = \DateTime::createFromFormat('U', $unixNow)->format('Y-m-d');
+            $data['fromDate'] = Carbon::createFromFormat('U', $unixAgo)->format('Y-m-d');
+            $data['toDate'] = Carbon::createFromFormat('U', $unixNow)->format('Y-m-d');
 
             // If option is not passed send mail to each profile
             if ($forAccountants === false) {
@@ -74,6 +75,14 @@ class EmailProfilePerformance extends Command
                 }
             }
             $adminAggregation[] = $data;
+
+            if ($forAccountants) {
+                // Update profile overall stats
+                $profileOverall = ProfileOverall::getProfileOverallRecord($profile);
+                $profileOverall->totalCost += $data['costTotal'];
+                $profileOverall->profit = $profileOverall->totalEarned - $profileOverall->totalCost;
+                $profileOverall->save();
+            }
         }
 
         $overviewRecipients = Profile::where('admin', '=', true)->get();

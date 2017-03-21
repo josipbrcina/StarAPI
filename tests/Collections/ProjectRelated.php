@@ -128,6 +128,7 @@ trait ProjectRelated
                 'qa' => 0,
                 'qa_in_progress' => 0,
                 'qa_total_time' => 0,
+                'numberFailedQa' => 0,
                 'blocked' => 0,
                 'workTrackTimestamp' => $timestamp,
                 'timeAssigned' => $timestamp
@@ -155,6 +156,7 @@ trait ProjectRelated
                 'qa' => 0,
                 'qa_in_progress' => 0,
                 'qa_total_time' => 0,
+                'numberFailedQa' => 0,
                 'blocked' => 0,
                 'workTrackTimestamp' => (int)(new \DateTime())->format('U')
             ]

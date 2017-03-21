@@ -26,6 +26,7 @@ class ProfilePerformanceTest extends TestCase
             'skills' => ['PHP']
         ]));
         $this->profile->xp = 200;
+        $this->profile->employeeRole = 'Apprentice';
         $this->profile->save();
 
         $this->projectOwner = new Profile();
@@ -60,6 +61,7 @@ class ProfilePerformanceTest extends TestCase
                     'qaSeconds' => 0,
                     'qaProgressSeconds' => 0,
                     'qaProgressTotalSeconds' => 0,
+                    'totalNumberFailedQa' => 0,
                     'blockedSeconds' => 0,
                     'workTrackTimestamp' => $task->work[$this->profile->id]['workTrackTimestamp'],
                     'taskLastOwner' => true,
