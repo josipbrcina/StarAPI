@@ -47,6 +47,8 @@ class ProfilePerformance
 
         $estimatedHours = 0;
         $hoursDelivered = 0;
+        $totalWorkSeconds = 0;
+        $totalNumberFailedQa = 0;
         $totalPayoutInternal = 0;
         $realPayoutInternal = 0;
         $totalPayoutExternal = 0;
@@ -70,6 +72,8 @@ class ProfilePerformance
                     if ($userId === $profile->id) {
                         $estimatedHours += (float)$task->estimatedHours;
                         $timeDoingQa += $workStats['qa_total_time'];
+                        $totalWorkSeconds += $workStats['worked'];
+                        $totalNumberFailedQa += $workStats['numberFailedQa'];
                     } else {
                         $timeDoingQa += $workStats['qa_total_time'];
                     }
@@ -125,9 +129,14 @@ class ProfilePerformance
         $totalPayoutCombined = $totalPayoutExternal + $totalPayoutInternal;
         $realPayoutCombined = $realPayoutExternal + $realPayoutInternal;
         $timeDoingQaHours = $this->roundFloat(($timeDoingQa / 60 / 60), 2, 5);
+        $totalWorkHours = $this->roundFloat($totalWorkSeconds / 60 / 60, 2, 5);
+        $qaSuccessRate = $totalNumberFailedQa > 0 ?
+            sprintf("%d", $totalNumberFailedQa / count($profileTasks) * 100)
+            : sprintf("%d", 100);
         $out = [
             'estimatedHours' => $estimatedHours,
             'hoursDelivered' => $hoursDelivered,
+            'totalWorkHours' => $totalWorkHours,
             'totalPayoutExternal' => $totalPayoutExternal,
             'realPayoutExternal' => $realPayoutExternal,
             'totalPayoutInternal' => $totalPayoutInternal,
@@ -135,12 +144,15 @@ class ProfilePerformance
             'totalPayoutCombined' => $totalPayoutCombined,
             'realPayoutCombined' => $realPayoutCombined,
             'hoursDoingQA' => $timeDoingQaHours,
+            'qaSuccessRate' => $qaSuccessRate,
             'xpDiff' => $xpDiff,
             'xpTotal' => $profile->xp,
         ];
 
         $out = array_merge($out, $this->calculateSalary($out, $profile));
         $out = array_merge($out, $this->calculateEarningEstimation($out, $numberOfDays));
+        // Total cost of employee per time range
+        $out['totalEmployeeCostPerTimeRange'] = $this->roundFloat($out['costTotal'] / $numberOfDays, 2, 5);
 
         return $out;
     }
@@ -175,6 +187,7 @@ class ProfilePerformance
             $userPerformance['qaSeconds'] = $stats['qa'];
             $userPerformance['qaProgressSeconds'] = $stats['qa_in_progress'];
             $userPerformance['qaProgressTotalSeconds'] = $stats['qa_total_time'];
+            $userPerformance['totalNumberFailedQa'] = $stats['numberFailedQa'];
             $userPerformance['blockedSeconds'] = $stats['blocked'];
             $userPerformance['workTrackTimestamp'] = $stats['workTrackTimestamp'];
 

@@ -18,7 +18,7 @@ class TaskStatusTimeCalculation
         $task = $event->model;
         $unixTime = (new \DateTime())->format('U');
 
-        //if collection is other than tasks, return false
+        // If collection is other than tasks, return false
         if ($task['collection'] !== 'tasks') {
             return false;
         }
@@ -39,7 +39,7 @@ class TaskStatusTimeCalculation
             $task->work = [];
         }
 
-        /*On task creation/task claim check if there is owner assigned and set work field and task priority
+        /* On task creation/task claim check if there is owner assigned and set work field and task priority
         coefficient*/
         $profilePerformance = new ProfilePerformance();
 
@@ -56,6 +56,7 @@ class TaskStatusTimeCalculation
                     'qa' => 0,
                     'qa_in_progress' => 0,
                     'qa_total_time' => 0,
+                    'numberFailedQa' => 0,
                     'blocked' => 0,
                     'workTrackTimestamp' => $unixTime,
                     'timeAssigned' => $unixTime
@@ -72,6 +73,7 @@ class TaskStatusTimeCalculation
                 'qa' => 0,
                 'qa_in_progress' => 0,
                 'qa_total_time' => 0,
+                'numberFailedQa' => 0,
                 'blocked' => 0,
                 'workTrackTimestamp' => $unixTime,
                 'timeAssigned' => $unixTime
@@ -79,16 +81,16 @@ class TaskStatusTimeCalculation
             $task->work = $work;
         }
 
-        //handle task status time logic if model is updated and has got task owner
+        // Handle task status time logic if model is updated and has got task owner
         if ($task->isDirty()) {
-            //if task is reassigned, set properly work field values for all task owners
-            //set work field for user that's first time on task(reassigned)
+             /* If task is reassigned, set properly work field values for all task owners
+            set work field for user that's first time on task(reassigned)*/
             if (key_exists('owner', $updatedFields)) {
                 $work = $task->work;
-                //update work stats list of old user owners
+                // Update work stats list of old user owners
                 foreach ($work as $ownerId => $workArray) {
                     if ($ownerId !== $updatedFields['owner'] && !key_exists('timeRemoved', $workArray)) {
-                        //calculate times for last active task owner
+                        // Calculate times for last active task owner
                         $calculatedTime = (int)($unixTime - $work[$ownerId]['workTrackTimestamp']);
 
                         if ($task->paused !== true
@@ -115,7 +117,7 @@ class TaskStatusTimeCalculation
                         $work[$ownerId]['timeRemoved'] = $unixTime;
                         $work[$ownerId]['workTrackTimestamp'] = $unixTime;
                     }
-                    //if user is reassigned set time flags to assigned
+                    // If user is reassigned set time flags to assigned
                     if ($ownerId === $updatedFields['owner']) {
                         unset($work[$ownerId]['timeRemoved']);
                         $work[$ownerId]['workTrackTimestamp'] = $unixTime;
@@ -125,7 +127,7 @@ class TaskStatusTimeCalculation
                 $task->work = $work;
             }
 
-            //when task status is paused/resumed calculate time for worked/paused
+            // When task status is paused/resumed calculate time for worked/paused
             if (key_exists('paused', $updatedFields)
                 && !key_exists('qa_in_progress', $updatedFields)
                 && !key_exists('submitted_for_qa', $updatedFields)) {
@@ -138,7 +140,7 @@ class TaskStatusTimeCalculation
 
                 $task->work = $work;
             }
-            //when task status is blocked/unblocked calculate time for worked/blocked
+            // When task status is blocked/unblocked calculate time for worked/blocked
             if (key_exists('blocked', $updatedFields)) {
                 $work = $task->work;
                 $calculatedTime = (int)($unixTime - $work[$task->owner]['workTrackTimestamp']);
@@ -149,7 +151,7 @@ class TaskStatusTimeCalculation
 
                 $task->work = $work;
             }
-            //when task status is submitted_for_qa calculate time for worked
+            // When task status is submitted_for_qa calculate time for worked
             if (key_exists('submitted_for_qa', $updatedFields)
                 && !key_exists('qa_in_progress', $updatedFields)
             ) {
@@ -163,7 +165,7 @@ class TaskStatusTimeCalculation
 
                 $task->work = $work;
             }
-            //when task status is set to failed QA calculate time for qa_in_progress
+            // When task status is set to failed QA calculate time for qa_in_progress
             if (key_exists('qa_in_progress', $updatedFields) && !key_exists('passed_qa', $updatedFields)) {
                 $work = $task->work;
                 $calculatedTime = (int)($unixTime - $work[$task->owner]['workTrackTimestamp']);
@@ -172,12 +174,13 @@ class TaskStatusTimeCalculation
                 } else {
                     $work[$task->owner]['qa_in_progress'] = 0;
                     $work[$task->owner]['qa_total_time'] += $calculatedTime;
+                    $work[$task->owner]['numberFailedQa']++;
                 }
                 $work[$task->owner]['workTrackTimestamp'] = $unixTime;
 
                 $task->work = $work;
             }
-            //when task status is passed_qa update task work timestamp
+            // When task status is passed_qa update task work timestamp
             if (key_exists('passed_qa', $updatedFields)
                 && $updatedFields['passed_qa'] === true
                 && key_exists('qa_in_progress', $updatedFields)
