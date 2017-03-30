@@ -38,8 +38,6 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
      */
     public function handle()
     {
-        GenericModel::setCollection('tasks');
-
         $unixNow = (int)Carbon::now()->format('U');
         // Unix timestamp 1 day before now at the beginning of the fay
         $unixYesterday = (int)Carbon::now()->subDay(1)->startOfDay()->format('U');
@@ -47,69 +45,120 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
         $unixSevenDaysFromNow = (int)Carbon::now()->addDays(7)->endOfDay()->format('U');
 
         // Get all unfinished tasks with due_date between yesterday and next 7 days
+        GenericModel::setCollection('tasks');
         $tasks = GenericModel::where('due_date', '<=', $unixSevenDaysFromNow)
             ->where('due_date', '>=', $unixYesterday)
             ->where('ready', '=', true)
             ->where('passed_qa', '=', false)
             ->get();
 
-        GenericModel::setCollection('projects');
-        $getProjects = GenericModel::all();
-
-        $allProjects = [];
-        foreach ($getProjects as $project) {
-            $allProjects[$project->id] = $project;
-        }
-
-        $tasksDeadlinePassed = [];
+        $projects = [];
+        $tasksDueDatePassed = [];
         $tasksDueDateIn7Days = [];
-        $profiles = Profile::where('active', '=', true)
-            ->get();
 
         foreach ($tasks as $task) {
+            if (!array_key_exists($task->project_id, $projects)) {
+                GenericModel::setCollection('projects');
+                $project = GenericModel::find($task->project_id);
+                if ($project) {
+                    $projects[$project->_id] = $project;
+                }
+            }
             if ($task->due_date <= $unixNow) {
-                $tasksDeadlinePassed[] = $task;
+                $tasksDueDatePassed[$task->due_date][] = $task;
             } else {
-                $tasksDueDateIn7Days[$task->due_date] = $task;
+                $tasksDueDateIn7Days[$task->due_date][] = $task;
             }
         }
 
+        // Sort array of tasks ascending by due_date so we can notify about deadline
         ksort($tasksDueDateIn7Days);
         $webDomain = Config::get('sharedSettings.internalConfiguration.webDomain');
+
+        $profiles = Profile::where('active', '=', true)
+            ->get();
         foreach ($profiles as $recipient) {
             if ($recipient->slack) {
-                $counter = 1;
-                $message = 'Hey, tasks due_date soon:';
-                foreach ($tasksDueDateIn7Days as $taskToNotify) {
-                    if (!$recipient->admin
-                        && $recipient->id !== $allProjects[$taskToNotify->project_id]->acceptedBy
-                        && !in_array($recipient->id, $allProjects[$taskToNotify->project_id]->members)
-                    ) {
-                        continue;
-                    }
-                    $compareSkills = array_intersect($recipient->skills, $taskToNotify->skillset);
-                    if (!empty($compareSkills)) {
-                        $message .= ' *'
-                            . $taskToNotify->title
-                            . ' ('
-                            . Carbon::createFromTimestamp($taskToNotify->due_date)->format('Y-m-d')
-                            . ')* '
-                            . $webDomain
-                            . 'projects/'
-                            . $taskToNotify->project_id
-                            . '/sprints/'
-                            . $taskToNotify->sprint_id
-                            . '/tasks/'
-                            . $taskToNotify->_id
-                            . ($counter < 3 ? ', ' : '');
-                        if ($counter === 3) {
-                            $recipientSlack = '@' . $recipient->slack;
-                            SlackChat::message($recipientSlack, $message);
-                            //Slack::sendMessage($recipientSlack, $message, Slack::LOW_PRIORITY);
-                            break;
+                $recipientSlack = '@' . $recipient->slack;
+                $sendDueDatesMessage = false;
+                $sendDeadlinePassedMessage = false;
+
+                /*Loop through tasks that have due_date within next 7 days, compare skills with recipient skills and get
+                max 3 tasks with nearest due_date*/
+                $tasksToNotifyRecipient = [];
+                foreach ($tasksDueDateIn7Days as $tasksToNotifyArray) {
+                    foreach ($tasksToNotifyArray as $taskToNotify) {
+                        if (!$recipient->admin
+                            && $recipient->id !== $projects[$taskToNotify->project_id]->acceptedBy
+                            && !in_array($recipient->id, $projects[$taskToNotify->project_id]->members)
+                        ) {
+                            continue;
                         }
-                        $counter++;
+                        $compareSkills = array_intersect($recipient->skills, $taskToNotify->skillset);
+                        if (!empty($compareSkills) && count($tasksToNotifyRecipient) < 3) {
+                            $tasksToNotifyRecipient[] = $taskToNotify;
+                        }
                     }
+                }
+                if (!empty($tasksToNotifyRecipient)) {
+                    $sendDueDatesMessage = true;
+                }
+
+                // Create message for tasks with due_date within next 7 days
+                $message = 'Hey, these tasks *due_date soon*:';
+                foreach ($tasksToNotifyRecipient as $taskToNotifyRecipient) {
+                    $message .= ' *'
+                        . $taskToNotifyRecipient->title
+                        . ' ('
+                        . Carbon::createFromTimestamp($taskToNotifyRecipient->due_date)->format('Y-m-d')
+                        . ')* '
+                        . $webDomain
+                        . 'projects/'
+                        . $taskToNotifyRecipient->project_id
+                        . '/sprints/'
+                        . $taskToNotifyRecipient->sprint_id
+                        . '/tasks/'
+                        . $taskToNotifyRecipient->_id
+                        . ' ';
+                }
+
+                /* Look if there are some tasks with due_date passed within project where recipient is PO*/
+                $tasksToNotifyPo = [];
+                foreach ($tasksDueDatePassed as $dueDateTasksArray) {
+                    foreach ($dueDateTasksArray as $taskPassed) {
+                        if ($recipient->id === $projects[$taskPassed->project_id]->acceptedBy) {
+                            $tasksToNotifyPo[] = $taskPassed;
+                        }
+                    }
+                }
+                if (!empty($tasksToNotifyPo)) {
+                    $sendDeadlinePassedMessage = true;
+                }
+
+                // Create message for tasks that due_date has passed for PO
+                $messageDeadlinePassed = 'Hey, these tasks *due_date has passed*:';
+                foreach ($tasksToNotifyPo as $taskDeadlinePassed) {
+                    $messageDeadlinePassed .= ' *'
+                        . $taskDeadlinePassed->title
+                        . ' ('
+                        . Carbon::createFromTimestamp($taskDeadlinePassed->due_date)->format('Y-m-d')
+                        . ')* '
+                        . $webDomain
+                        . 'projects/'
+                        . $taskDeadlinePassed->project_id
+                        . '/sprints/'
+                        . $taskDeadlinePassed->sprint_id
+                        . '/tasks/'
+                        . $taskDeadlinePassed->_id
+                        . ' ';
+                }
+                // Send message for task due_dates
+                if ($sendDueDatesMessage) {
+                    Slack::sendMessage($recipientSlack, $message, Slack::LOW_PRIORITY);
+                }
+                // Send message to PO about tasks that deadline has passed
+                if ($sendDeadlinePassedMessage) {
+                    Slack::sendMessage($recipientSlack, $message, Slack::LOW_PRIORITY);
                 }
             }
         }
