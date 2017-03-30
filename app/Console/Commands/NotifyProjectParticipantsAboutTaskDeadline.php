@@ -8,7 +8,6 @@ use App\Profile;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
-use Vluzrmos\SlackApi\Facades\SlackChat;
 
 /**
  * Class NotifyProjectParticipantsAboutTaskDeadline
@@ -16,6 +15,8 @@ use Vluzrmos\SlackApi\Facades\SlackChat;
  */
 class NotifyProjectParticipantsAboutTaskDeadline extends Command
 {
+    const DUE_DATE_PASSED = 'due_date_passed';
+    const DUE_DATE_SOON = 'due_date_soon';
     /**
      * The name and signature of the console command.
      *
@@ -29,7 +30,8 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
      * @var string
      */
     protected $description =
-        'Ping admins,project members and project owner on slack about task deadlines within next 7 days';
+        'Ping admins,project members and project owner on slack about task deadlines within next 7 days, ping project
+        owner about tasks that deadline has passed.';
 
     /**
      * Execute the console command.
@@ -73,15 +75,12 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
 
         // Sort array of tasks ascending by due_date so we can notify about deadline
         ksort($tasksDueDateIn7Days);
-        $webDomain = Config::get('sharedSettings.internalConfiguration.webDomain');
 
         $profiles = Profile::where('active', '=', true)
             ->get();
         foreach ($profiles as $recipient) {
             if ($recipient->slack) {
                 $recipientSlack = '@' . $recipient->slack;
-                $sendDueDatesMessage = false;
-                $sendDeadlinePassedMessage = false;
 
                 /*Loop through tasks that have due_date within next 7 days, compare skills with recipient skills and get
                 max 3 tasks with nearest due_date*/
@@ -100,27 +99,6 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
                         }
                     }
                 }
-                if (!empty($tasksToNotifyRecipient)) {
-                    $sendDueDatesMessage = true;
-                }
-
-                // Create message for tasks with due_date within next 7 days
-                $message = 'Hey, these tasks *due_date soon*:';
-                foreach ($tasksToNotifyRecipient as $taskToNotifyRecipient) {
-                    $message .= ' *'
-                        . $taskToNotifyRecipient->title
-                        . ' ('
-                        . Carbon::createFromTimestamp($taskToNotifyRecipient->due_date)->format('Y-m-d')
-                        . ')* '
-                        . $webDomain
-                        . 'projects/'
-                        . $taskToNotifyRecipient->project_id
-                        . '/sprints/'
-                        . $taskToNotifyRecipient->sprint_id
-                        . '/tasks/'
-                        . $taskToNotifyRecipient->_id
-                        . ' ';
-                }
 
                 /* Look if there are some tasks with due_date passed within project where recipient is PO*/
                 $tasksToNotifyPo = [];
@@ -131,36 +109,67 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
                         }
                     }
                 }
-                if (!empty($tasksToNotifyPo)) {
-                    $sendDeadlinePassedMessage = true;
-                }
 
+                // Create message for tasks with due_date within next 7 days
+                $messageDeadlineSoon = $this->createMessage(self::DUE_DATE_SOON, $tasksToNotifyRecipient);
+                if ($messageDeadlineSoon) {
+                    Slack::sendMessage(
+                        $recipientSlack,
+                        $messageDeadlineSoon,
+                        Slack::LOW_PRIORITY
+                    );
+                }
                 // Create message for tasks that due_date has passed for PO
-                $messageDeadlinePassed = 'Hey, these tasks *due_date has passed*:';
-                foreach ($tasksToNotifyPo as $taskDeadlinePassed) {
-                    $messageDeadlinePassed .= ' *'
-                        . $taskDeadlinePassed->title
-                        . ' ('
-                        . Carbon::createFromTimestamp($taskDeadlinePassed->due_date)->format('Y-m-d')
-                        . ')* '
-                        . $webDomain
-                        . 'projects/'
-                        . $taskDeadlinePassed->project_id
-                        . '/sprints/'
-                        . $taskDeadlinePassed->sprint_id
-                        . '/tasks/'
-                        . $taskDeadlinePassed->_id
-                        . ' ';
-                }
-                // Send message for task due_dates
-                if ($sendDueDatesMessage) {
-                    Slack::sendMessage($recipientSlack, $message, Slack::LOW_PRIORITY);
-                }
-                // Send message to PO about tasks that deadline has passed
-                if ($sendDeadlinePassedMessage) {
-                    Slack::sendMessage($recipientSlack, $message, Slack::LOW_PRIORITY);
+                $messageDeadlinePassed = $this->createMessage(self::DUE_DATE_PASSED, $tasksToNotifyPo);
+                if ($messageDeadlinePassed) {
+                    Slack::sendMessage(
+                        $recipientSlack,
+                        $messageDeadlinePassed,
+                        Slack::LOW_PRIORITY
+                    );
                 }
             }
         }
+    }
+
+    /**
+     * Helper for creating message about tasks deadline
+     * @param array $tasks
+     * @param $format
+     * @return bool|string
+     */
+    private function createMessage($format, array $tasks = [])
+    {
+        if (empty($tasks)) {
+            return false;
+        }
+
+        $webDomain = Config::get('sharedSettings.internalConfiguration.webDomain');
+        $message = '';
+
+        if ($format === self::DUE_DATE_SOON) {
+            $message = 'Hey, these tasks *due_date soon*:';
+        }
+        if ($format === self::DUE_DATE_PASSED) {
+            $message = 'Hey, these tasks *due_date has passed*:';
+        }
+
+        foreach ($tasks as $task) {
+            $message .= ' *'
+                . $task->title
+                . ' ('
+                . Carbon::createFromTimestamp($task->due_date)->format('Y-m-d')
+                . ')* '
+                . $webDomain
+                . 'projects/'
+                . $task->project_id
+                . '/sprints/'
+                . $task->sprint_id
+                . '/tasks/'
+                . $task->_id
+                . ' ';
+        }
+
+        return $message;
     }
 }
