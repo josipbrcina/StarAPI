@@ -51,7 +51,7 @@ class Task implements AdaptersInterface
 
         $this->task->estimate = (float) sprintf('%.2f', $this->task->estimatedHours);
         $this->task->estimatedHours = (float) $originalEstimate;
-        $this->task->xp = (float) sprintf('%.2f', $this->task->xp);
+        $this->task->xp = (float) sprintf('%.2f', $this->task->xp * 2); // Multiply basic xp by 2
         $this->task->payout = (float) sprintf('%.2f', $mappedValues['payout']);
 
         $taskStatus = $profilePerformance->perTask($this->task);

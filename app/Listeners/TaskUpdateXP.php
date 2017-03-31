@@ -71,10 +71,10 @@ class TaskUpdateXP
             $taskXp = (float) $mappedValues['xp'];
 
             if ($taskFinishedDate <= $taskDueDate) {
-                $xpDiff = $taskXp;
+                $xpDiff = $taskXp * 2; // Xp award - multiply basic xp by 2
                 $message = 'Task Delivered on time: ' . $taskLink;
             } else {
-                $xpDiff = -5;
+                $xpDiff = -($taskXp * 15); // Xp deduction - multiply basic xp by 15
                 $message = 'Late task delivery: ' . $taskLink;
             }
 

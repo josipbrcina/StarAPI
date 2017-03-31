@@ -2,6 +2,7 @@
 
 namespace Tests\Listeners;
 
+use App\Services\ProfilePerformance;
 use Tests\TestCase;
 use Tests\Collections\ProjectRelated;
 use App\Profile;
@@ -74,12 +75,16 @@ class TaskUpdateXpTest extends TestCase
         $task->save();
         $task->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $task);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($task);
         $listener = new TaskUpdateXP($task);
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(200.2025, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -109,12 +114,16 @@ class TaskUpdateXpTest extends TestCase
         $task->save();
         $task->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $task);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($task);
         $listener = new TaskUpdateXP($task);
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(200.2025, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -143,15 +152,22 @@ class TaskUpdateXpTest extends TestCase
         $task->save();
         $task->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $task);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($task);
         $listener = new TaskUpdateXP($task);
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(195, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp - ($profileValues['xp'] * 15), $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
+    /**
+     * Test update XP for delivered task in time + QA (project owner)
+     */
     public function testTaskUpdateXpProjectOwnerReviewInTime()
     {
         $project = $this->getNewProject();
@@ -185,21 +201,27 @@ class TaskUpdateXpTest extends TestCase
         $worked[$task->owner]['workTrackTimestamp'] =
             (int) (new \DateTime())->sub(new \DateInterval('PT' . $passedQaAgo . 'M'))->format('U');
 
-
         $task->work = $worked;
         $task->save();
         $task->passed_qa = true;
+
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $task);
+        $profileOldXp = $this->profile->xp;
 
         $event = new ModelUpdate($task);
         $listener = new TaskUpdateXP($task);
         $out = $listener->handle($event);
 
-        // Task done in time so task owner(admin also) get's double XP
+        // Task done in time so task owner(admin also) get's XP for task and for Qa
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(200.4525, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2) + 0.25, $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
+    /**
+     * Check update XP for late review QA - xp deduction
+     */
     public function testTaskUpdateXpProjectOwnerReviewLate()
     {
         $project = $this->getNewProject();
@@ -237,13 +259,17 @@ class TaskUpdateXpTest extends TestCase
         $task->save();
         $task->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $task);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($task);
         $listener = new TaskUpdateXP($task);
         $out = $listener->handle($event);
 
-        // Task owner get's XP for early delivery and xp is deducted because code note reviewed in time
+        // Task owner get's XP for early delivery and xp is deducted because code not reviewed in time
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(197.2025, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2) - 3, $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -296,12 +322,16 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriority->save();
         $taskLowPriority->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $taskLowPriority);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($taskLowPriority);
         $listener = new TaskUpdateXP($taskLowPriority);
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(200.2025, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -364,12 +394,16 @@ class TaskUpdateXpTest extends TestCase
         $taskLowPriority->save();
         $taskLowPriority->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $taskLowPriority);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($taskLowPriority);
         $listener = new TaskUpdateXP($taskLowPriority);
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(200.10125, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -427,12 +461,16 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriority->save();
         $taskMediumPriority->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $taskMediumPriority);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($taskMediumPriority);
         $listener = new TaskUpdateXP($taskMediumPriority);
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(200.2025, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -495,12 +533,16 @@ class TaskUpdateXpTest extends TestCase
         $taskMediumPriority->save();
         $taskMediumPriority->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $taskMediumPriority);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($taskMediumPriority);
         $listener = new TaskUpdateXP($taskMediumPriority);
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(200.162, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -563,12 +605,16 @@ class TaskUpdateXpTest extends TestCase
         $taskHighPriority->save();
         $taskHighPriority->passed_qa = true;
 
+        $pp = new ProfilePerformance();
+        $profileValues = $pp->getTaskValuesForProfile($this->profile, $taskHighPriority);
+        $profileOldXp = $this->profile->xp;
+
         $event = new ModelUpdate($taskHighPriority);
         $listener = new TaskUpdateXP($taskHighPriority);
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals(200.2025, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -587,8 +633,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $this->assertEquals(false, $out);
-
-
+        
         // Let's make some update
         $task->priority = 'High';
         $task->title = 'Test';
