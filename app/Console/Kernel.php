@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
         Commands\SlackSendMessages::class,
         Commands\UpdateTaskPriority::class,
         Commands\NotifyAdminsTaskPriority::class,
+        Commands\NotifyAdminsQaWaitingTasks::class
     ];
 
     /**
@@ -66,12 +67,16 @@ class Kernel extends ConsoleKernel
         // Check for messages to send every minute
         $schedule->command('slack:send-messages');
 
-        //Check task deadline and update priority
+        // Check task deadline and update priority
         $schedule->command('update:task:priority')
             ->dailyAt('07:00');
 
-        //Check task deadlines based on priority and ping admins
+        // Check task deadlines based on priority and ping admins
         $schedule->command('ping:admins:task:priority')
             ->dailyAt('07:00');
+
+        // Ping admins about tasks with Qa in progress
+        $schedule->command('ping:admins:qa:waiting:tasks')
+            ->twiceDaily(9, 14);
     }
 }
