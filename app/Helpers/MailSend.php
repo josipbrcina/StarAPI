@@ -16,10 +16,10 @@ class MailSend
      * @param $data
      * @param $profile
      * @param $subject
-     * @param null $pdf
+     * @param array $attachments
      * @return bool
      */
-    public static function send($view, $data, $profile, $subject, $pdf = null)
+    public static function send($view, $data, $profile, $subject, array $attachments = [])
     {
         $mailConfig = Config::get('mail.emails_enabled');
 
@@ -32,12 +32,12 @@ class MailSend
                 $emailFrom,
                 $emailName,
                 $subject,
-                $pdf
+                $attachments
             ) {
                 $message->from($emailFrom, $emailName);
                 $message->to($profile->email, $profile->name)->subject($emailName . ' - ' . $subject);
-                if ($pdf !== null) {
-                    $message->attachData($pdf, 'SalaryReport.pdf');
+                foreach ($attachments as $FileNameAndExtension => $attachmentContent) {
+                    $message->attachData($attachmentContent, $FileNameAndExtension);
                 }
             });
 

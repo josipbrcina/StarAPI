@@ -101,11 +101,14 @@ class EmailProfilePerformance extends Command
 
             if ($recipient->active) {
                 // Create pdf with salary report and attach it to email
+                $attachments = [];
                 $pdf = \PDF::loadView($view, [
                     'reports' => $adminAggregation,
                     'pdf' => true
                 ])->output();
-                MailSend::send($view, ['reports' => $adminAggregation], $recipient, $subject, $pdf);
+                $attachments['SalaryReport.pdf'] = $pdf;
+
+                MailSend::send($view, ['reports' => $adminAggregation], $recipient, $subject, $attachments);
             }
         }
     }
