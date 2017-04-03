@@ -94,8 +94,11 @@ class NotifyAdminsQaWaitingTasks extends Command
                         }
                     }
                 }
-                // Send message
-                Slack::sendMessage($recipient, $message, Slack::HIGH_PRIORITY);
+
+                if (count($tasksInQa) > 0) {
+                    // Send message
+                    Slack::sendMessage($recipient, $message, Slack::HIGH_PRIORITY);
+                }
             }
         }
     }
