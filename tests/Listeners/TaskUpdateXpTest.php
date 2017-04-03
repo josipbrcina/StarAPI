@@ -84,7 +84,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'], $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -123,7 +123,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'], $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -161,7 +161,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp - ($profileValues['xp'] * 15), $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp - $profileValues['xpDeduction'], $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -215,7 +215,7 @@ class TaskUpdateXpTest extends TestCase
 
         // Task done in time so task owner(admin also) get's XP for task and for Qa
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2) + 0.25, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'] + 0.25, $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -269,7 +269,7 @@ class TaskUpdateXpTest extends TestCase
 
         // Task owner get's XP for early delivery and xp is deducted because code not reviewed in time
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2) - 3, $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'] - 3, $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -331,7 +331,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'], $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -403,7 +403,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'], $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -470,7 +470,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'], $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -542,7 +542,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'], $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 
@@ -614,7 +614,7 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $checkXpProfile = Profile::find($this->profile->id);
-        $this->assertEquals($profileOldXp + ($profileValues['xp'] * 2), $checkXpProfile->xp);
+        $this->assertEquals($profileOldXp + $profileValues['xp'], $checkXpProfile->xp);
         $this->assertEquals(true, $out);
     }
 

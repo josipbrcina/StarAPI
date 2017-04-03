@@ -83,7 +83,6 @@ class ProfilePerformance
                 $estimatedHours += (float)$task->estimatedHours; // For old tasks without work field
             }
 
-
             // Get the project if not loaded already
             if (!array_key_exists($task->project_id, $loadedProjects)) {
                 GenericModel::setCollection('projects');
@@ -237,7 +236,7 @@ class ProfilePerformance
     }
 
     /**
-     * Calculates payout, xp award and estimate for specific $profile <-> $task relation
+     * Get task payout, xp award and estimate for specific $profile <-> $task relation
      *
      * @param Profile $profile
      * @param GenericModel $task
@@ -245,33 +244,22 @@ class ProfilePerformance
      */
     public function getTaskValuesForProfile(Profile $profile, GenericModel $task)
     {
-        $xp = (float)$profile->xp;
+        $xpAwardMultiplyBy = 2;
+        $xpDeductionMultiplyBy = 15;
 
-        $taskComplexity = max((int)$task->complexity, 1);
-
-        $estimatedHours = (float)$task->estimatedHours * 1000 / min($xp, 1000);
-
-        // Award xp based on complexity, task priority and duration coefficient
-        $taskPriorityCoefficient = null;
-        if (isset($task->priorityCoefficient)) {
-            $taskPriorityCoefficient = $task->priorityCoefficient;
-        } else {
-            $taskPriorityCoefficient = $this->taskPriorityCoefficient($profile, $task);
-        }
-
-        $xpAward = $xp <= 200 ? $taskComplexity * $estimatedHours * 10 / $xp *
-            $taskPriorityCoefficient * $this->getDurationCoefficient($profile, $estimatedHours) :
-            $taskPriorityCoefficient * $this->getDurationCoefficient($profile, $estimatedHours);
+        $xpAward = $this->calculateXpAwardOrDeduction($profile, $task, $xpAwardMultiplyBy);
+        $xpDeduction = $this->calculateXpAwardOrDeduction($profile, $task, $xpDeductionMultiplyBy);
 
         $hourlyRate = Config::get('sharedSettings.internalConfiguration.hourlyRate');
 
         $out = [];
         $out['xp'] = $xpAward;
+        $out['xpDeduction'] = $xpDeduction;
         $out['payout'] = InputHandler::getFloat($hourlyRate) * $task->estimatedHours;
         if (isset($task->noPayout) && $task->noPayout === true) {
             $out['payout'] = 0;
         }
-        $out['estimatedHours'] = $estimatedHours;
+        $out['estimatedHours'] = $this->calculateTaskEstimatedHours($profile, $task);
 
         return $out;
     }
@@ -333,9 +321,12 @@ class ProfilePerformance
      * @param $estimatedHours
      * @return float|int
      */
-    private function getDurationCoefficient(Profile $taskOwner, $estimatedHours)
+    private function getDurationCoefficient(Profile $taskOwner, $estimatedHours, $multiplyBy = null)
     {
         $profileCoefficient = 0.9;
+        if ($multiplyBy === null) {
+            $multiplyBy = 1;
+        }
         if ((float)$taskOwner->xp > 200 && (float)$taskOwner->xp <= 400) {
             $profileCoefficient = 0.8;
         } elseif ((float)$taskOwner->xp > 400 && (float)$taskOwner->xp <= 600) {
@@ -349,10 +340,57 @@ class ProfilePerformance
         }
 
         if ((int)$estimatedHours < 10) {
-            return ((int)$estimatedHours / 10) * $profileCoefficient;
+            return ((int)$estimatedHours / 10) * ($profileCoefficient * $multiplyBy);
         }
 
-        return $profileCoefficient;
+        return $profileCoefficient * $multiplyBy;
+    }
+
+    /**
+     * Calculate Xp award or deduction for specific $profile <-> $task relation
+     * @param Profile $profile
+     * @param GenericModel $task
+     * @param $multiplyBy
+     * @return float|int|mixed
+     */
+    private function calculateXpAwardOrDeduction(Profile $profile, GenericModel $task, $multiplyBy = null)
+    {
+        $xp = (float)$profile->xp;
+
+        $taskComplexity = max((int)$task->complexity, 1);
+
+        $estimatedHours = $this->calculateTaskEstimatedHours($profile, $task);
+
+        if ($multiplyBy === null) {
+            $multiplyBy = 1;
+        }
+
+        // Calculate xp award/deduction based on complexity, task priority and duration coefficient
+        $taskPriorityCoefficient = null;
+        if (isset($task->priorityCoefficient)) {
+            $taskPriorityCoefficient = $task->priorityCoefficient;
+        } else {
+            $taskPriorityCoefficient = $this->taskPriorityCoefficient($profile, $task);
+        }
+
+        $calculatedXp = $xp <= 200 ? $taskComplexity * $estimatedHours * 10 / $xp *
+            $taskPriorityCoefficient * $this->getDurationCoefficient($profile, $estimatedHours, $multiplyBy) :
+            $taskPriorityCoefficient * $this->getDurationCoefficient($profile, $estimatedHours, $multiplyBy);
+
+        return $calculatedXp;
+    }
+
+    /**
+     * Calculate task estimated hours for specific $profile <-> $task relation
+     * @param Profile $profile
+     * @param GenericModel $task
+     * @return float
+     */
+    private function calculateTaskEstimatedHours(Profile $profile, GenericModel $task)
+    {
+        $estimatedHours = (float)$task->estimatedHours * 1000 / min((float)$profile->xp, 1000);
+
+        return $estimatedHours;
     }
 
     /**
@@ -447,6 +485,7 @@ class ProfilePerformance
     {
         // 17.2% is fixed cost over gross salary in Croatia
         $gross = $totalGross / 1.172;
+
         return $gross;
     }
 

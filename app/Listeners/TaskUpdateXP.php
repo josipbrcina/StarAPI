@@ -69,12 +69,13 @@ class TaskUpdateXP
             $taskFinishedDate = Carbon::createFromFormat('U', $taskFinishedUnixTime)->format('Y-m-d');
             $taskDueDate = Carbon::createFromFormat('U', $taskDueDateUnixTime)->format('Y-m-d');
             $taskXp = (float) $mappedValues['xp'];
+            $taskXpDeduction = (float) $mappedValues['xpDeduction'];
 
             if ($taskFinishedDate <= $taskDueDate) {
-                $xpDiff = $taskXp * 2; // Xp award - multiply basic xp by 2
+                $xpDiff = $taskXp;
                 $message = 'Task Delivered on time: ' . $taskLink;
             } else {
-                $xpDiff = -($taskXp * 15); // Xp deduction - multiply basic xp by 15
+                $xpDiff = -($taskXpDeduction);
                 $message = 'Late task delivery: ' . $taskLink;
             }
 
