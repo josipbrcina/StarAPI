@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
 use App\Profile;
+use Vluzrmos\SlackApi\Facades\SlackChat;
 
 /**
  * Class NotifyAdminsQaWaitingTasks
@@ -38,6 +39,7 @@ class NotifyAdminsQaWaitingTasks extends Command
     {
         $dateYesterday = Carbon::yesterday()->format('Y-m-d');
         $webDomain = Config::get('sharedSettings.internalConfiguration.webDomain');
+        $sendMessage = false;
 
         // Get all tasks that are submitted for QA
         GenericModel::setCollection('tasks');
@@ -90,14 +92,17 @@ class NotifyAdminsQaWaitingTasks extends Command
                                     . '/tasks/'
                                     . $task->_id
                                     . ' ';
+                                if ($sendMessage === false) {
+                                    $sendMessage = true;
+                                }
                             }
                         }
                     }
                 }
-
-                if (count($tasksInQa) > 0) {
-                    // Send message
+                // Send message
+                if ($sendMessage) {
                     Slack::sendMessage($recipient, $message, Slack::HIGH_PRIORITY);
+                    $sendMessage = false;
                 }
             }
         }
