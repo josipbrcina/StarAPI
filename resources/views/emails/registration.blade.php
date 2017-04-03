@@ -28,5 +28,3 @@
         <li> Slack email domain: {{ $teamSlack['emailDomain'] }}</li>
     </ul>
 @endif
-
-

@@ -100,7 +100,12 @@ class EmailProfilePerformance extends Command
             $subject = Config::get('mail.admin_performance_email_subject');
 
             if ($recipient->active) {
-                MailSend::send($view, ['reports' => $adminAggregation], $recipient, $subject);
+                // Create pdf with salary report and attach it to email
+                $pdf = \PDF::loadView($view, [
+                    'reports' => $adminAggregation,
+                    'pdf' => true
+                ])->output();
+                MailSend::send($view, ['reports' => $adminAggregation], $recipient, $subject, $pdf);
             }
         }
     }
