@@ -75,7 +75,7 @@ class TaskUpdateXP
                 $xpDiff = $taskXp;
                 $message = 'Task Delivered on time: ' . $taskLink;
             } else {
-                $xpDiff = -($taskXpDeduction);
+                $xpDiff = $taskXpDeduction < 1 ? -1 : -($taskXpDeduction); // Deduct at least 1 xp
                 $message = 'Late task delivery: ' . $taskLink;
             }
 

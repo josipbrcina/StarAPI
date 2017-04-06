@@ -3,6 +3,7 @@
 namespace Tests\Listeners;
 
 use App\Services\ProfilePerformance;
+use Carbon\Carbon;
 use Tests\TestCase;
 use Tests\Collections\ProjectRelated;
 use App\Profile;
@@ -654,5 +655,31 @@ class TaskUpdateXpTest extends TestCase
         $out = $listener->handle($event);
 
         $this->assertEquals(false, $out);
+    }
+
+    /**
+     * Test xp deduction if profilePerformance mapped values for xpDeduction is lower than 1
+     * (should deduct at least 1 xp)
+     */
+    public function testTaskUpdateXpDeductionAtLeastOneXp()
+    {
+        $this->profile->xp = 1000;
+        $this->profile->save();
+
+        $task = $this->getAssignedTask();
+        $task->due_date = Carbon::yesterday()->format('U');
+        $task->estimatedHours = 0.1;
+        $task->save();
+
+        $profileOldXp = $this->profile->xp;
+
+        $task->passed_qa = true;
+        $event = new ModelUpdate($task);
+        $listener = new TaskUpdateXP($task);
+        $out = $listener->handle($event);
+
+        $checkXpProfile = Profile::find($this->profile->id);
+        $this->assertEquals($profileOldXp - 1, $checkXpProfile->xp);
+        $this->assertEquals(true, $out);
     }
 }
