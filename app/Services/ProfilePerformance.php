@@ -250,15 +250,10 @@ class ProfilePerformance
         $xpAward = $this->calculateXpAwardOrDeduction($profile, $task, $xpAwardMultiplyBy);
         $xpDeduction = $this->calculateXpAwardOrDeduction($profile, $task, $xpDeductionMultiplyBy);
 
-        $hourlyRate = Config::get('sharedSettings.internalConfiguration.hourlyRate');
-
         $out = [];
         $out['xp'] = $xpAward;
         $out['xpDeduction'] = $xpDeduction;
-        $out['payout'] = InputHandler::getFloat($hourlyRate) * $task->estimatedHours;
-        if (isset($task->noPayout) && $task->noPayout === true) {
-            $out['payout'] = 0;
-        }
+        $out['payout'] = $this->calculateTaskPayout($task);
         $out['estimatedHours'] = $this->calculateTaskEstimatedHours($profile, $task);
 
         return $out;
@@ -314,6 +309,40 @@ class ProfilePerformance
         GenericModel::setCollection($preSetCollection);
 
         return $taskPriorityCoefficient;
+    }
+
+    /**
+     * Calculate task payout
+     * @param GenericModel $task
+     * @return float|int
+     */
+    private function calculateTaskPayout(GenericModel $task)
+    {
+        $hourlyRate = 0;
+
+        // If task has noPayout return 0
+        if (isset($task->noPayout) && $task->noPayout === true) {
+            return $hourlyRate;
+        }
+
+        $preSetCollection = GenericModel::getCollection();
+        GenericModel::setCollection('hourly-rates');
+        $hourlyRatesPerSkill = GenericModel::first();
+
+        if ($hourlyRatesPerSkill) {
+            $skillCompare = array_intersect_key(array_flip($task->skillset), $hourlyRatesPerSkill->hourlyRates);
+            foreach ($skillCompare as $key => $value) {
+                $hourlyRate += $hourlyRatesPerSkill->hourlyRates[$key];
+            }
+            // Calculate average hourly rate per skill if task has got more then one skill
+            if (count($skillCompare) > 0) {
+                $hourlyRate = $hourlyRate / count($skillCompare);
+            }
+        }
+
+        GenericModel::setCollection($preSetCollection);
+
+        return InputHandler::getFloat($hourlyRate) * $task->estimatedHours;
     }
 
     /**

@@ -198,15 +198,30 @@ class ProfilePerformanceTest extends TestCase
      */
     public function testProfilePerformanceTaskCalculationDeliveryForTimeRangeSixDays()
     {
+        GenericModel::setCollection('hourly-rates');
+        GenericModel::truncate();
+        GenericModel::create([
+            'hourlyRates' => [
+                'PHP' => 500,
+                'React' => 500,
+                'DevOps' => 500,
+                'Node' => 500,
+                'Planning' => 500,
+                'Management' => 500
+            ]
+        ]);
+
         $project = $this->getNewProject();
         $project->save();
 
         $workDays = WorkDays::getWorkDays();
         $tasks = [];
         $counter = 1;
+        $skills = ['PHP'];
         foreach ($workDays as $day) {
             $unixDay = \DateTime::createFromFormat('Y-m-d', $day)->format('U');
             $task = $this->getAssignedTask($unixDay);
+            $task->skillset = $skills;
             $task->estimatedHours = 1;
             $task->project_id = $project->id;
             if ($counter % 2 === 0) {
@@ -418,5 +433,134 @@ class ProfilePerformanceTest extends TestCase
         $pp = new ProfilePerformance();
         $out = $pp->taskPriorityCoefficient($this->profile, $mediumPriorityTask);
         $this->assertEquals(0.8, $out);
+    }
+
+    /**
+     * Test profile performance task payout with one skill on task
+     */
+    public function testProfilePerformanceTaskPayoutOneSkill()
+    {
+        GenericModel::setCollection('hourly-rates');
+        GenericModel::truncate();
+        $hourlyRatesPerSkill = GenericModel::create([
+            'hourlyRates' => [
+                'PHP' => 500,
+                'React' => 500,
+                'DevOps' => 500,
+                'Node' => 500,
+                'Planning' => 500,
+                'Management' => 500
+            ]
+        ]);
+        $skills = ['PHP'];
+        $task = $this->getNewTask();
+        $task->skillset = $skills;
+        $task->estimatedHours = 2;
+        $task->save();
+
+        $hourlyRate = 0;
+        $skillCompare = array_intersect_key(array_flip($task->skillset), $hourlyRatesPerSkill->hourlyRates);
+        foreach ($skillCompare as $key => $value) {
+            $hourlyRate += $hourlyRatesPerSkill->hourlyRates[$key];
+        }
+        // Calculate average hourly rate per skill if task has got more then one skill
+        if (count($skillCompare) > 0) {
+            $hourlyRate = $hourlyRate / count($skillCompare);
+        }
+
+        $pp = new ProfilePerformance();
+        $out = $pp->getTaskValuesForProfile($this->profile, $task);
+        $this->assertEquals($hourlyRate * $task->estimatedHours, $out['payout']);
+    }
+
+    /**
+     * Test profile performance task payout with many skills
+     */
+    public function testProfilePerformanceTaskPayoutOneSkillManySkills()
+    {
+        GenericModel::setCollection('hourly-rates');
+        GenericModel::truncate();
+        $hourlyRatesPerSkill = GenericModel::create([
+            'hourlyRates' => [
+                'PHP' => 240,
+                'React' => 380,
+                'DevOps' => 500,
+                'Node' => 500,
+                'Planning' => 500,
+                'Management' => 500
+            ]
+        ]);
+        $skills = ['PHP', 'Node', 'React'];
+        $task = $this->getNewTask();
+        $task->skillset = $skills;
+        $task->estimatedHours = 3;
+        $task->save();
+
+        $hourlyRate = 0;
+        $skillCompare = array_intersect_key(array_flip($task->skillset), $hourlyRatesPerSkill->hourlyRates);
+        foreach ($skillCompare as $key => $value) {
+            $hourlyRate += $hourlyRatesPerSkill->hourlyRates[$key];
+        }
+        // Calculate average hourly rate per skill if task has got more then one skill
+        if (count($skillCompare) > 0) {
+            $hourlyRate = $hourlyRate / count($skillCompare);
+        }
+
+        $pp = new ProfilePerformance();
+        $out = $pp->getTaskValuesForProfile($this->profile, $task);
+        $this->assertEquals($hourlyRate * $task->estimatedHours, $out['payout']);
+    }
+
+    /**
+     * Test profile performance task payout for task without skills
+     */
+    public function testProfilePerformanceTaskPayoutWithoutSkills()
+    {
+        GenericModel::setCollection('hourly-rates');
+        GenericModel::truncate();
+        $hourlyRatesPerSkill = GenericModel::create([
+            'hourlyRates' => [
+                'PHP' => 240,
+                'React' => 380,
+                'DevOps' => 500,
+                'Node' => 500,
+                'Planning' => 500,
+                'Management' => 500
+            ]
+        ]);
+        $skills = [];
+        $task = $this->getNewTask();
+        $task->skillset = $skills;
+        $task->estimatedHours = 3;
+        $task->save();
+
+        $hourlyRate = 0;
+        $skillCompare = array_intersect_key(array_flip($task->skillset), $hourlyRatesPerSkill->hourlyRates);
+        foreach ($skillCompare as $key => $value) {
+            $hourlyRate += $hourlyRatesPerSkill->hourlyRates[$key];
+        }
+        // Calculate average hourly rate per skill if task has got more then one skill
+        if (count($skillCompare) > 0) {
+            $hourlyRate = $hourlyRate / count($skillCompare);
+        }
+
+        $pp = new ProfilePerformance();
+        $out = $pp->getTaskValuesForProfile($this->profile, $task);
+        $this->assertEquals($hourlyRate * $task->estimatedHours, $out['payout']);
+    }
+
+    /**
+     * Test profile performance task payout for task that has set noPayout = true
+     */
+    public function testProfilePerformanceTaskPayoutWithNoPayout()
+    {
+        $task = $this->getNewTask();
+        $task->estimatedHours = 3;
+        $task->noPayout = true;
+        $task->save();
+
+        $pp = new ProfilePerformance();
+        $out = $pp->getTaskValuesForProfile($this->profile, $task);
+        $this->assertEquals(0, $out['payout']);
     }
 }
