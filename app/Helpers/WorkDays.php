@@ -11,14 +11,14 @@ use Carbon\Carbon;
 class WorkDays
 {
     /**
-     * Return list of work days (week days) for current month
-     * Class WorkDays
-     * @package App\Helpers
+     * Return list of work days (week days) for month from unix timestamp
+     * @param $unixStart
+     * @return array
      */
-    public static function getWorkDays()
+    public static function getWorkDays($unixStart)
     {
-        $firstDayOfMonth = Carbon::now()->firstOfMonth();
-        $lastDayOfMonth = Carbon::now()->endOfMonth();
+        $firstDayOfMonth = Carbon::createFromTimestamp($unixStart)->firstOfMonth();
+        $lastDayOfMonth = Carbon::createFromTimestamp($unixStart)->endOfMonth();
 
         $dates = [];
 

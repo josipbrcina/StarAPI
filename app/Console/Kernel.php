@@ -53,7 +53,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('email:profile:performance 0 --accountants')
             ->dailyAt('16:00')
             ->when(function () {
-                $workDays = WorkDays::getWorkDays();
+                $workDays = WorkDays::getWorkDays(Carbon::now()->format('U'));
                 $lastWorkDay = end($workDays);
                 return Carbon::parse($lastWorkDay)->isToday();
             });

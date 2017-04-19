@@ -4,6 +4,7 @@ namespace Tests\Services;
 
 use App\Exceptions\UserInputException;
 use App\GenericModel;
+use App\Helpers\InputHandler;
 use App\Helpers\WorkDays;
 use App\Profile;
 use App\Services\ProfilePerformance;
@@ -11,6 +12,7 @@ use Carbon\Carbon;
 use Tests\Collections\ProfileRelated;
 use Tests\Collections\ProjectRelated;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Config;
 
 class ProfilePerformanceTest extends TestCase
 {
@@ -114,7 +116,7 @@ class ProfilePerformanceTest extends TestCase
     public function testProfilePerformanceForTimeRangeXpDiff()
     {
         $profileXpRecord = $this->getXpRecord();
-        $workDays = WorkDays::getWorkDays();
+        $workDays = WorkDays::getWorkDays(Carbon::now()->format('U'));
         foreach ($workDays as $day) {
             $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
         }
@@ -136,7 +138,7 @@ class ProfilePerformanceTest extends TestCase
     public function testProfilePerformanceForTimeRangeXpDifference()
     {
         $profileXpRecord = $this->getXpRecord();
-        $workDays = WorkDays::getWorkDays();
+        $workDays = WorkDays::getWorkDays(Carbon::now()->format('U'));
         foreach ($workDays as $day) {
             $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
         }
@@ -158,7 +160,7 @@ class ProfilePerformanceTest extends TestCase
     public function testProfilePerformanceForTimeRangeXpDifferenceWithNoXp()
     {
         $profileXpRecord = $this->getXpRecord();
-        $workDays = WorkDays::getWorkDays();
+        $workDays = WorkDays::getWorkDays(Carbon::now()->format('U'));
         foreach ($workDays as $day) {
             $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
         }
@@ -178,7 +180,7 @@ class ProfilePerformanceTest extends TestCase
     public function testProfilePerformanceForTimeRangeFiveDaysXpDifference()
     {
         $profileXpRecord = $this->getXpRecord();
-        $workDays = WorkDays::getWorkDays();
+        $workDays = WorkDays::getWorkDays(Carbon::now()->format('U'));
         foreach ($workDays as $day) {
             $this->addXpRecord($profileXpRecord, \DateTime::createFromFormat('Y-m-d', $day)->format('U'));
         }
@@ -201,7 +203,7 @@ class ProfilePerformanceTest extends TestCase
         $project = $this->getNewProject();
         $project->save();
 
-        $workDays = WorkDays::getWorkDays();
+        $workDays = WorkDays::getWorkDays(Carbon::now()->format('U'));
         $tasks = [];
         $counter = 1;
         foreach ($workDays as $day) {
@@ -418,5 +420,79 @@ class ProfilePerformanceTest extends TestCase
         $pp = new ProfilePerformance();
         $out = $pp->taskPriorityCoefficient($this->profile, $mediumPriorityTask);
         $this->assertEquals(0.8, $out);
+    }
+
+    /**
+     * Test minimum earning for current month with 10 days vacation
+     */
+    public function testMinimumForCurrentMonthWithVacation()
+    {
+        GenericModel::setCollection('vacations');
+        GenericModel::truncate();
+        $workDays = WorkDays::getWorkDays(Carbon::now()->format('U'));
+        $vacation = new GenericModel([
+            'records' => [
+                [
+                    'dateFrom' => Carbon::createFromFormat('Y-m-d', $workDays[5])->format('U'),
+                    'dateTo' => Carbon::createFromFormat('Y-m-d', $workDays[14])->format('U'),
+                    'recordTimestamp' => (int) Carbon::now()->format('U')
+                ]
+            ]
+        ]);
+        $vacation->_id = $this->profile->id;
+        $vacation->save();
+
+        $employeeConfig = Config::get('sharedSettings.internalConfiguration.employees.roles');
+
+        $role = $this->profile->employeeRole;
+        $baseMinimum = $employeeConfig[$role]['minimumEarnings'];
+
+        $calculatedMinimum = (10 / count($workDays)) * $baseMinimum;
+
+        $pp = new ProfilePerformance();
+        $out = $pp->aggregateForTimeRange(
+            $this->profile,
+            (int) Carbon::now()->format('U'),
+            (int) Carbon::now()->addDays(5)->format('U')
+        );
+        $this->assertEquals($calculatedMinimum, $out['roleMinimum']);
+    }
+
+    /**
+     * Test minimum earning for last month with vacation period last 5 days in previous month until now
+     */
+    public function testMinimumForLastMonthWithVacationAcrossTwoMonths()
+    {
+        GenericModel::setCollection('vacations');
+        GenericModel::truncate();
+        $workDays = WorkDays::getWorkDays(Carbon::now()->subMonth(1)->format('U'));
+        $fifthWorkDayUntilLast = count($workDays) - 5;
+        $vacation = new GenericModel([
+            'records' => [
+                [
+                    'dateFrom' => Carbon::createFromFormat('Y-m-d', $workDays[$fifthWorkDayUntilLast])
+                        ->format('U'),
+                    'dateTo' => Carbon::now()->format('U'),
+                    'recordTimestamp' => (int) Carbon::now()->format('U')
+                ]
+            ]
+        ]);
+        $vacation->_id = $this->profile->id;
+        $vacation->save();
+
+        $employeeConfig = Config::get('sharedSettings.internalConfiguration.employees.roles');
+
+        $role = $this->profile->employeeRole;
+        $baseMinimum = $employeeConfig[$role]['minimumEarnings'];
+
+        $calculatedMinimum = ($fifthWorkDayUntilLast / count($workDays)) * $baseMinimum;
+        $calculatedMinimum = InputHandler::roundFloat($calculatedMinimum, 2, 10);
+        $pp = new ProfilePerformance();
+        $out = $pp->aggregateForTimeRange(
+            $this->profile,
+            (int) Carbon::now()->subMonth(1)->format('U'),
+            (int) Carbon::now()->format('U')
+        );
+        $this->assertEquals($calculatedMinimum, $out['roleMinimum']);
     }
 }

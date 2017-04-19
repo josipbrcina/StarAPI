@@ -57,4 +57,23 @@ class InputHandler
 
         throw new \Exception('Input not an integer.');
     }
+
+    /**
+     * Helper method to round the float correctly
+     *
+     * @param $float
+     * @param $position
+     * @param $startAt
+     * @return mixed
+     */
+    public static function roundFloat($float, $position, $startAt)
+    {
+        if ($position < $startAt) {
+            $startAt--;
+            $newFloat = round($float, $startAt);
+            return self::roundFloat($newFloat, $position, $startAt);
+        }
+
+        return $float;
+    }
 }

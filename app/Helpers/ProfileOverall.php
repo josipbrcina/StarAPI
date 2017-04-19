@@ -11,7 +11,6 @@ use App\GenericModel;
  */
 class ProfileOverall
 {
-
     /**
      * Get profile overall record
      * @param Profile $profile

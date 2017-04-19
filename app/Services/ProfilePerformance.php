@@ -6,6 +6,7 @@ use App\Exceptions\UserInputException;
 use App\GenericModel;
 use App\Helpers\InputHandler;
 use App\Helpers\ProfileOverall;
+use App\Helpers\WorkDays;
 use App\Profile;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
@@ -128,8 +129,8 @@ class ProfilePerformance
         // Sum up totals
         $totalPayoutCombined = $totalPayoutExternal + $totalPayoutInternal;
         $realPayoutCombined = $realPayoutExternal + $realPayoutInternal;
-        $timeDoingQaHours = $this->roundFloat(($timeDoingQa / 60 / 60), 2, 5);
-        $totalWorkHours = $this->roundFloat($totalWorkSeconds / 60 / 60, 2, 5);
+        $timeDoingQaHours = InputHandler::roundFloat(($timeDoingQa / 60 / 60), 2, 5);
+        $totalWorkHours = InputHandler::roundFloat($totalWorkSeconds / 60 / 60, 2, 5);
         $qaSuccessRate = $totalNumberFailedQa > 0 ?
             sprintf("%d", $totalNumberFailedQa / count($profileTasks) * 100)
             : sprintf("%d", 100);
@@ -154,7 +155,7 @@ class ProfilePerformance
             'OverallProfit' => $profileOverall->profit
         ];
 
-        $out = array_merge($out, $this->calculateSalary($out, $profile));
+        $out = array_merge($out, $this->calculateSalary($out, $profile, $unixStart));
         $out = array_merge($out, $this->calculateEarningEstimation($out, $numberOfDays));
 
         return $out;
@@ -219,7 +220,7 @@ class ProfilePerformance
                 }
             }
 
-            //set last task owner flag so we can calculate payment and XP when task is finished
+            // Set last task owner flag so we can calculate payment and XP when task is finished
             if (!key_exists('timeRemoved', $stats)) {
                 $userPerformance['taskLastOwner'] = true;
             } else {
@@ -228,7 +229,7 @@ class ProfilePerformance
 
             $response[$taskOwnerId] = $userPerformance;
 
-            //remove flag from user performance array because only one user should have it
+            // Remove flag from user performance array because only one user should have it
             unset($userPerformance['taskLastOwner']);
         }
 
@@ -400,7 +401,7 @@ class ProfilePerformance
      * @param Profile $profile
      * @return array
      */
-    private function calculateSalary(array $aggregated, Profile $profile)
+    private function calculateSalary(array $aggregated, Profile $profile, $unixStart)
     {
         $employeeConfig = Config::get('sharedSettings.internalConfiguration.employees.roles');
 
@@ -418,7 +419,8 @@ class ProfilePerformance
             ];
         }
 
-        $minimum = $employeeConfig[$role]['minimumEarnings'];
+        $baseMinimum = $employeeConfig[$role]['minimumEarnings'];
+        $minimum = $this->calculateMinimum($profile, $baseMinimum, $unixStart);
         $coefficient = $employeeConfig[$role]['coefficient'];
         $xpEntryPoint = $employeeConfig[$role]['xpEntryPoint'];
 
@@ -449,16 +451,52 @@ class ProfilePerformance
         $costGrossMinimum = $this->calculateSalaryCostForAmount($realPayout, $coefficient);
         $grossMinimum = $this->calculateSalaryGrossForAmount($costGrossMinimum);
 
-        $aggregated['costTotal'] = $this->roundFloat($costReal, 2, 10);
-        $aggregated['minimalGrossPayout'] = $this->roundFloat($grossMinimum, 2, 10);
-        $aggregated['realGrossPayout'] = $this->roundFloat($grossReal, 2, 10);
-        $aggregated['grossBonusPayout'] = $this->roundFloat($grossReal - $grossMinimum, 2, 10);
+        $aggregated['costTotal'] = InputHandler::roundFloat($costReal, 2, 10);
+        $aggregated['minimalGrossPayout'] = InputHandler::roundFloat($grossMinimum, 2, 10);
+        $aggregated['realGrossPayout'] = InputHandler::roundFloat($grossReal, 2, 10);
+        $aggregated['grossBonusPayout'] = InputHandler::roundFloat($grossReal - $grossMinimum, 2, 10);
         $aggregated['costXpBasedPayout'] = $xpBasedPayout;
         $aggregated['employeeRole'] = $role;
         $aggregated['roleMinimumReached'] = $grossReal > $grossMinimum;
         $aggregated['roleMinimum'] = $minimum;
 
         return $aggregated;
+    }
+
+    /**
+     * Calculate profile minimum (in case employee was on vacation)
+     * @param Profile $profile
+     * @param $baseMinimum
+     * @return mixed
+     */
+    private function calculateMinimum(Profile $profile, $baseMinimum, $unixStart)
+    {
+        $workDays = WorkDays::getWorkDays($unixStart);
+        $totalProfileWorkedDays = count($workDays);
+
+        $oldCollection = GenericModel::getCollection();
+        GenericModel::setCollection('vacations');
+        $vacations = GenericModel::find($profile->id);
+
+        if ($vacations) {
+            foreach ($vacations->records as $record) {
+                $dateFrom = Carbon::createFromTimestamp($record['dateFrom']);
+                $dateTo = Carbon::createFromTimestamp($record['dateTo']);
+                for ($date = $dateFrom; $date->lte($dateTo); $date->addDay()) {
+                    if (in_array($date->format('Y-m-d'), $workDays)) {
+                        $totalProfileWorkedDays--;
+                    }
+                }
+            }
+        }
+
+        GenericModel::setCollection($oldCollection);
+
+        // Calculate minimum (percentage of base minimum)
+        $calculatedMinimum = ($totalProfileWorkedDays / count($workDays)) * $baseMinimum;
+        $roundedMinimum = InputHandler::roundFloat($calculatedMinimum, 2, 10);
+
+        return $roundedMinimum;
     }
 
     /**
@@ -487,25 +525,6 @@ class ProfilePerformance
         $gross = $totalGross / 1.172;
 
         return $gross;
-    }
-
-    /**
-     * Helper method to round the float correctly
-     *
-     * @param $float
-     * @param $position
-     * @param $startAt
-     * @return mixed
-     */
-    private function roundFloat($float, $position, $startAt)
-    {
-        if ($position < $startAt) {
-            $startAt--;
-            $newFloat = round($float, $startAt);
-            return $this->roundFloat($newFloat, $position, $startAt);
-        }
-
-        return $float;
     }
 
     /**
@@ -554,12 +573,12 @@ class ProfilePerformance
 
         // Generate output
         $aggregated['earnedPercentage'] = $earnedPercentage;
-        $aggregated['monthPrediction'] = $this->roundFloat($monthlyProjection, 2, 10);
-        $aggregated['totalEmployeeCostPerTimeRange'] = $this->roundFloat($totalEmployeeCostPerTimeRange, 2, 10);
-        $aggregated['projectedDifference1Month'] = $this->roundFloat($projectedDifference1Month, 2, 10);
-        $aggregated['projectedDifference3Months'] = $this->roundFloat($projectedDifference3Months, 2, 10);
-        $aggregated['projectedDifference6Months'] = $this->roundFloat($projectedDifference6Months, 2, 10);
-        $aggregated['projectedDifference12Months'] = $this->roundFloat($projectedDifference12Months, 2, 10);
+        $aggregated['monthPrediction'] = InputHandler::roundFloat($monthlyProjection, 2, 10);
+        $aggregated['totalEmployeeCostPerTimeRange'] = InputHandler::roundFloat($totalEmployeeCostPerTimeRange, 2, 10);
+        $aggregated['projectedDifference1Month'] = InputHandler::roundFloat($projectedDifference1Month, 2, 10);
+        $aggregated['projectedDifference3Months'] = InputHandler::roundFloat($projectedDifference3Months, 2, 10);
+        $aggregated['projectedDifference6Months'] = InputHandler::roundFloat($projectedDifference6Months, 2, 10);
+        $aggregated['projectedDifference12Months'] = InputHandler::roundFloat($projectedDifference12Months, 2, 10);
 
         return $aggregated;
     }

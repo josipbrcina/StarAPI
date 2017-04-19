@@ -132,19 +132,20 @@ namespace {
                                 'updateOwn' => true
                             ]
                         ]
-                    ], [
-                    'fields' => [
-                        'records' => 'array'
                     ],
-                    'resource' => 'xp',
-                    'acl' => [
-                        'standard' => [
-                            'editable' => [],
-                            'GET' => true,
-                            'DELETE' => false,
-                            'POST' => false
+                    [
+                        'fields' => [
+                            'records' => 'array'
+                        ],
+                        'resource' => 'xp',
+                        'acl' => [
+                            'standard' => [
+                                'editable' => [],
+                                'GET' => true,
+                                'DELETE' => false,
+                                'POST' => false
+                            ]
                         ]
-                    ]
                     ],
                     [
                         'fields' => [
@@ -240,7 +241,22 @@ namespace {
                                 'updateOwn' => false
                             ]
                         ]
-                    ]
+                    ],
+                    [
+                        'fields' => [
+                            'records' => 'array',
+                        ],
+                        'resource' => 'vacations',
+                        'acl' => [
+                            'standard' => [
+                                'editable' => [],
+                                'GET' => true,
+                                'DELETE' => false,
+                                'POST' => false,
+                                'updateOwn' => true
+                            ]
+                        ]
+                    ],
                 ]
             );
         }
