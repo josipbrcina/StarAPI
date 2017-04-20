@@ -8,6 +8,7 @@ use App\Profile;
 use App\Services\ProfilePerformance;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 
 /**
  * Class Task
@@ -36,11 +37,62 @@ class Task implements AdaptersInterface
     {
         $profilePerformance = new ProfilePerformance();
 
+        $taskViewPermission = false;
         $profile = Auth::user();
+
+        // Check if task has got owner
         if (!empty($this->task->owner)) {
             $profile = Profile::find($this->task->owner);
+            $taskViewPermission = true;
         }
 
+        // If task is not claimed (no owner) check if user is admin, Po or is task currently reserved by user
+        if (empty($this->task->owner)) {
+            $oldCollection = GenericModel::getCollection();
+            GenericModel::setCollection('projects');
+            $project = GenericModel::find($this->task->project_id);
+            GenericModel::setCollection($oldCollection);
+
+            if ($profile->admin || $profile->id === $project->acceptedBy) {
+                $taskViewPermission = true;
+            } elseif (isset($this->task->reservationsBy)) {
+                $unixNow = Carbon::now()->format('U');
+                $reservationTime =
+                    Config::get('sharedSettings.internalConfiguration.tasks.reservation.maxReservationTime');
+                foreach ($this->task->reservationsBy as $reservation) {
+                    if ($unixNow - $reservation['timestamp'] <= ($reservationTime * 60)
+                        && $reservation['user_id'] === $profile->id
+                    ) {
+                        $taskViewPermission = true;
+                    }
+                }
+            }
+        }
+
+        // If user doesn't have permission to view all task properties modify them and return task
+        if (!$taskViewPermission) {
+            $taskProperties = $this->task->getAttributes();
+            foreach ($taskProperties as $propertyName => $propertyValue) {
+                if ($propertyName === 'ready'
+                    || $propertyName === '_id'
+                    || $propertyName === 'project_id'
+                    || $propertyName === 'sprint_id'
+                    || $propertyName === 'title'
+                    || $propertyName === 'priority'
+                    || $propertyName === 'due_date'
+                    || $propertyName === 'price'
+                    || $propertyName === 'skillset'
+                ) {
+                    $this->task->{$propertyName} = $propertyValue;
+                } else {
+                    $this->task->{$propertyName} = null;
+                }
+            }
+
+            return $this->task;
+        }
+
+        // Set task properties for specific user
         $mappedValues = $profilePerformance->getTaskValuesForProfile($profile, $this->task);
 
         $originalEstimate = $this->task->estimatedHours;
@@ -49,10 +101,10 @@ class Task implements AdaptersInterface
             $this->task->{$key} = $value;
         }
 
-        $this->task->estimate = (float) sprintf('%.2f', $this->task->estimatedHours);
-        $this->task->estimatedHours = (float) $originalEstimate;
-        $this->task->xp = (float) sprintf('%.2f', $this->task->xp);
-        $this->task->payout = (float) sprintf('%.2f', $mappedValues['payout']);
+        $this->task->estimate = (float)sprintf('%.2f', $this->task->estimatedHours);
+        $this->task->estimatedHours = (float)$originalEstimate;
+        $this->task->xp = (float)sprintf('%.2f', $this->task->xp);
+        $this->task->payout = (float)sprintf('%.2f', $mappedValues['payout']);
 
         $taskStatus = $profilePerformance->perTask($this->task);
 
