@@ -34,6 +34,7 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
         Route::get('profiles/{id}/performance', 'ProfileController@getPerformance');
         Route::get('profiles/{id}/feedback', 'ProfileController@getFeedback');
         Route::post('profiles/{id}/feedback', 'ProfileController@storeFeedback');
+        Route::post('profiles/{id}/vacation', 'ProfileController@vacation');
         Route::resource('profiles', 'ProfileController');
         Route::resource('validations', 'ValidationController');
         Route::get('projects/{id}/uploads', 'FileUploadController@getProjectUploads');
@@ -80,7 +81,6 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
         Route::delete('{resource}/{id}', 'GenericResourceController@destroy')->middleware(['the-shop.genericResource', 'adapters']);
         Route::put('{resource}/{id}/restore', 'GenericResourceController@restore')->middleware(['the-shop.genericResource', 'adapters']);
         Route::post('{resource}/register', 'GenericResourceController@store')->middleware(['the-shop.genericResource', 'adapters']);
-        Route::post('{resource}/{id}/vacation', 'GenericResourceController@vacation')->middleware(['the-shop.genericResource', 'adapters']);
     });
 });
 
