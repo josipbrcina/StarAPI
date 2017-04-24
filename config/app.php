@@ -150,6 +150,7 @@ return [
         Tymon\JWTAuth\Providers\JWTAuthServiceProvider::class,
         Vluzrmos\SlackApi\SlackApiServiceProvider::class,
         Barryvdh\DomPDF\ServiceProvider::class,
+        Mookofe\Tail\ServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -216,6 +217,7 @@ return [
         'SlackRealTimeMessage'  => Vluzrmos\SlackApi\Facades\SlackRealTimeMessage::class,
         'SlackTeam'             => Vluzrmos\SlackApi\Facades\SlackTeam::class,
         'Helper'    => App\Helpers\Helper::class,
-        'PDF' => Barryvdh\DomPDF\Facade::class
+        'PDF' => Barryvdh\DomPDF\Facade::class,
+        'Tail' => Mookofe\Tail\Facades\Tail::class,
     ],
 ];

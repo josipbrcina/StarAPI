@@ -14,7 +14,8 @@
         "vluzrmos/slack-api": "^0.4.8",
         "cdaguerre/php-trello-api": "@dev",
         "league/flysystem-aws-s3-v3": "^1.0",
-        "barryvdh/laravel-dompdf": "^0.8.0"
+        "barryvdh/laravel-dompdf": "^0.8.0",
+        "mookofe/tail": "1.*"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
