@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Helpers\WorkDays;
+use Aws\Command;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Carbon\Carbon;
@@ -25,7 +26,8 @@ class Kernel extends ConsoleKernel
         Commands\SlackSendMessages::class,
         Commands\UpdateTaskPriority::class,
         Commands\NotifyAdminsTaskPriority::class,
-        Commands\NotifyAdminsQaWaitingTasks::class
+        Commands\NotifyAdminsQaWaitingTasks::class,
+        Commands\NotifyAdminsAndPoAboutLateAndQaTasks::class,
     ];
 
     /**
@@ -78,5 +80,9 @@ class Kernel extends ConsoleKernel
         // Ping admins about tasks with Qa in progress
         $schedule->command('ping:admins:qa:waiting:tasks')
             ->twiceDaily(9, 14);
+
+        // Ping admins and project owners about late tasks and Qa waiting tasks
+        $schedule->command('ping:admins:late-and-qa-tasks')
+            ->dailyAt('08:00');
     }
 }
