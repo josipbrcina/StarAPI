@@ -22,6 +22,7 @@ namespace {
             $this->call(AdapterRulesSeeder::class);
             $this->call(UserRolesSeeder::class);
             $this->call(FeedbackFormsSeeder::class);
+            $this->call(HourlyRatePerSkillSeeder::class);
             $this->call(ApplicationRegistrationSeeder::class);
         }
     }

@@ -27,6 +27,7 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
     Route::post('login', 'ProfileController@login');
     Route::post('forgotPassword', 'ProfileController@forgotPassword');
     Route::post('resetPassword', 'ProfileController@resetPassword');
+    Route::get('profile', 'ProfileController@current');
 
     // Define a group of APIs that require auth (we use JWT Auth for token authorization)
     Route::group(['middleware' => ['jwt.auth', 'jwt.refresh', 'acl']], function () {

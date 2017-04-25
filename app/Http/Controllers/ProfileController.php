@@ -45,6 +45,22 @@ class ProfileController extends Controller
     }
 
     /**
+     * Returns current user if there, otherwise HTTP 401
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function current()
+    {
+        $profile = Auth::user();
+
+        if (!$profile) {
+            return $this->jsonError('User not logged in.', 401);
+        }
+
+        return $this->jsonSuccess($profile);
+    }
+
+    /**
      * @return \Illuminate\Http\JsonResponse
      */
     public function index()
@@ -383,7 +399,11 @@ class ProfileController extends Controller
             return $this->jsonError('Issue with sending password reset email.');
         };
 
-        return $this->jsonSuccess('You will shortly receive an email with the link to reset your password.');
+        return $this->jsonSuccess(
+            [
+                'messages' => ['You will shortly receive an email with the link to reset your password.']
+            ]
+        );
     }
 
     /**
