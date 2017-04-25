@@ -44,7 +44,7 @@ class TaskClaim
                 $project = GenericModel::where('_id', '=', $task->project_id)->first();
 
                 if (!in_array($taskOwnerId, $project->members)) {
-                    throw new UserInputException('Permission denied. Not a member of project.');
+                    throw new UserInputException('Permission denied. Not a member of project.', 403);
                 }
 
                 foreach ($allTasks as $item) {
@@ -54,7 +54,7 @@ class TaskClaim
                             if ($currentUnixTime - $userReservation['timestamp'] <= ($taskReservationTime * 60)
                                 && $userReservation['user_id'] === $taskOwnerId
                             ) {
-                                throw new UserInputException('Permission denied. There is reserved previous task.');
+                                throw new UserInputException('Permission denied. There is reserved previous task.', 403);
                             }
                         }
                     }
@@ -65,7 +65,7 @@ class TaskClaim
                         && $item->qa_in_progress === false
                         && $item->submitted_for_qa === false
                     ) {
-                        throw new UserInputException('Permission denied. There are unfinished previous tasks.');
+                        throw new UserInputException('Permission denied. There are unfinished previous tasks.', 403);
                     }
                 }
             }

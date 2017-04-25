@@ -286,7 +286,11 @@ class ProfilePerformance
                 ->get();
             foreach ($projectTasks as $projectTask) {
                 // Let's compare user skills with task skillset
-                $compareSkills = array_intersect($taskOwner->skills, $projectTask->skillset);
+                $profileSkills = [];
+                if (isset($taskOwner->skills)) {
+                    $profileSkills = $taskOwner->skills;
+                }
+                $compareSkills = array_intersect($profileSkills, $projectTask->skillset);
                 if (empty($projectTask->owner)
                     && !in_array($projectTask->priority, $unassignedTasksPriority)
                     && !empty($compareSkills)

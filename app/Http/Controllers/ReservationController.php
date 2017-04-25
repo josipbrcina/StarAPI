@@ -34,7 +34,7 @@ class ReservationController extends Controller
         $time = (new \DateTime())->getTimestamp();
 
         if ($this->validateReservation($project, $errors, $time, self::MAKE_RESERVATION) === false) {
-            return $this->jsonError($errors, 400);
+            return $this->jsonError($errors, 403);
         }
 
 
@@ -61,7 +61,7 @@ class ReservationController extends Controller
         $time = (new \DateTime())->getTimestamp();
 
         if ($this->validateReservation($project, $errors, $time, self::ACCEPT_OR_DECLINE) === false) {
-            return $this->jsonError($errors, 400);
+            return $this->jsonError($errors, 403);
         }
 
         $project->acceptedBy = Auth::user()->id;
@@ -85,7 +85,7 @@ class ReservationController extends Controller
         $time = (new \DateTime())->getTimestamp();
 
         if ($this->validateReservation($project, $errors, $time, self::ACCEPT_OR_DECLINE) === false) {
-            return $this->jsonError($errors, 400);
+            return $this->jsonError($errors, 403);
         }
 
         $declined = $project->declinedBy;
@@ -110,7 +110,7 @@ class ReservationController extends Controller
         $time = (new \DateTime())->getTimestamp();
 
         if ($this->validateReservation($task, $errors, $time, self::MAKE_RESERVATION) === false) {
-            return $this->jsonError($errors, 400);
+            return $this->jsonError($errors, 403);
         }
 
         $reservationsBy = $task->reservationsBy;
@@ -140,7 +140,7 @@ class ReservationController extends Controller
         $time = (new \DateTime())->getTimestamp();
 
         if ($this->validateReservation($task, $errors, $time, self::ACCEPT_OR_DECLINE) === false) {
-            return $this->jsonError($errors, 400);
+            return $this->jsonError($errors, 403);
         }
 
         $task->owner = Auth::user()->id;
@@ -168,7 +168,7 @@ class ReservationController extends Controller
         $time = (new \DateTime())->getTimestamp();
 
         if ($this->validateReservation($task, $errors, $time, self::ACCEPT_OR_DECLINE) === false) {
-            return $this->jsonError($errors, 400);
+            return $this->jsonError($errors, 403);
         }
 
         $declined = $task->declinedBy;

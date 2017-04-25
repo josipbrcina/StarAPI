@@ -21,7 +21,7 @@ class TaskSettingStatus
             $keysToCheck = ['paused', 'submitted_for_qa', 'passed_qa'];
             $checked = array_intersect_key($updatedFields, array_flip($keysToCheck));
             if ($task['collection'] === 'tasks' && empty($task->owner) && count($checked) > 0) {
-                throw new UserInputException('Permission denied. Task is not claimed.');
+                throw new UserInputException('Permission denied. Task is not claimed.', 403);
             }
         }
     }

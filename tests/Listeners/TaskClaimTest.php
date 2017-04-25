@@ -101,7 +101,7 @@ class TaskClaimTest extends TestCase
         $this->setExpectedException(
             UserInputException::class,
             'Permission denied. There is reserved previous task.',
-            400
+            403
         );
         $out = $listener->handle($event);
         $this->assertEquals($out, $this->getExpectedException());
@@ -141,7 +141,7 @@ class TaskClaimTest extends TestCase
         $this->setExpectedException(
             UserInputException::class,
             'Permission denied. There are unfinished previous tasks.',
-            400
+            403
         );
         $out = $listener->handle($event);
         $this->assertEquals($out, $this->getExpectedException());
@@ -184,7 +184,7 @@ class TaskClaimTest extends TestCase
         $this->setExpectedException(
             UserInputException::class,
             'Permission denied. There are unfinished previous tasks.',
-            400
+            403
         );
         $out = $listener->handle($event);
         $this->assertEquals($out, $this->getExpectedException());
@@ -217,7 +217,7 @@ class TaskClaimTest extends TestCase
         $this->setExpectedException(
             UserInputException::class,
             'Permission denied. Not a member of project.',
-            400
+            403
         );
         $out = $listener->handle($event);
         $this->assertEquals($out, $this->getExpectedException());
