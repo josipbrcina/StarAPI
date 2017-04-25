@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Mookofe\Tail\Tail;
+use Mookofe\Tail\Facades\Tail;
 
 /**
  * Class RabbitMQ
@@ -12,10 +12,12 @@ class RabbitMQ
 {
     public static function addTask($queue, $payload)
     {
-        $jsonPayload = json_encode($payload);
-        $message = new Tail();
-        $message->add($queue, $jsonPayload);
+        try {
+            Tail::add($queue, $payload);
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 400);
+        }
 
-        return true;
+        return response()->json('Task successfully added to RabbitMQ queue.', 200);
     }
 }

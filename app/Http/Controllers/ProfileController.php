@@ -6,7 +6,6 @@ use App\Events\ProfileUpdate;
 use App\GenericModel;
 use App\Helpers\InputHandler;
 use App\Services\ProfilePerformance;
-use App\Services\RabbitMQ;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -66,8 +65,6 @@ class ProfileController extends Controller
      */
     public function index()
     {
-        //RabbitMQ::addTask('test', 'test message');
-
         $profiles = Profile::all();
         return $this->jsonSuccess($profiles);
     }
