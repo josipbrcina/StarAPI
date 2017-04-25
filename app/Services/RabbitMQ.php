@@ -18,6 +18,6 @@ class RabbitMQ
             return response()->json($e->getMessage(), 400);
         }
 
-        return response()->json('Task successfully added to RabbitMQ queue.', 200);
+        return response()->json(["messages" => ["Task successfully added to RabbitMQ queue."]], 200);
     }
 }
