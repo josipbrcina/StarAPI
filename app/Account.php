@@ -2,6 +2,7 @@
 
 namespace App;
 
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
@@ -11,7 +12,7 @@ use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
  * Class Profile
  * @package App
  */
-class Profile extends StarModel implements AuthenticatableContract, CanResetPasswordContract
+class Account extends StarModel implements AuthenticatableContract, CanResetPasswordContract
 {
     use Authenticatable, CanResetPassword;
 
@@ -23,19 +24,21 @@ class Profile extends StarModel implements AuthenticatableContract, CanResetPass
     protected $fillable = [
         'name',
         'email',
-        'github',
+        'password',
         'trello',
+        'github',
         'slack',
-        'valid',
-        'employee',
-        'xp',
-        'active',
-        'xp_id',
-        'admin',
-        'role',
-        'employeeRole',
-        'skills',
-        'minimumsMissed',
+        'applications'
+    ];
+
+    /**
+     * The attributes excluded from the model's JSON form.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password',
+        'remember_token'
     ];
 
     /**
@@ -47,13 +50,20 @@ class Profile extends StarModel implements AuthenticatableContract, CanResetPass
     public static function create(array $attributes = [])
     {
         $model = new static($attributes);
-
-        $model->xp = 50;
-        $model->role = 'standard';
-        $model->minimumsMissed = 0;
-
+        $model->applications = [];
         $model->save();
 
         return $model;
+    }
+
+    /**
+     * Passwords must always be hashed
+     *
+     * @param $password
+     */
+    public function setPasswordAttribute($password)
+    {
+        // Let's hash the password when setting the attribute
+        $this->attributes['password'] = Hash::make($password);
     }
 }

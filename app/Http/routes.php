@@ -23,20 +23,21 @@
 */
 Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app-support', 'the-shop.requestLogger']], function () {
     // API calls we allow without token authorization
-    Route::post('register', 'ProfileController@store');
-    Route::post('login', 'ProfileController@login');
-    Route::post('forgotPassword', 'ProfileController@forgotPassword');
-    Route::post('resetPassword', 'ProfileController@resetPassword');
+    Route::post('register', 'AccountController@store');
+    Route::post('login', 'AccountController@login');
+    Route::post('forgotPassword', 'AccountController@forgotPassword');
+    Route::post('resetPassword', 'AccountController@resetPassword');
     Route::get('profile', 'ProfileController@current');
 
     // Define a group of APIs that require auth (we use JWT Auth for token authorization)
     Route::group(['middleware' => ['jwt.auth', 'jwt.refresh', 'acl']], function () {
-        Route::put('profiles/changePassword', 'ProfileController@changePassword');
+        Route::put('accounts/changePassword', 'AccountController@changePassword');
         Route::get('profiles/{id}/performance', 'ProfileController@getPerformance');
         Route::get('profiles/{id}/feedback', 'ProfileController@getFeedback');
         Route::post('profiles/{id}/feedback', 'ProfileController@storeFeedback');
         Route::post('profiles/{id}/vacation', 'ProfileController@vacation');
         Route::resource('profiles', 'ProfileController');
+        Route::resource('accounts', 'AccountController');
         Route::resource('validations', 'ValidationController');
         Route::get('projects/{id}/uploads', 'FileUploadController@getProjectUploads');
         Route::put('projects/{id}/makeReservation', 'ReservationController@makeProjectReservation');

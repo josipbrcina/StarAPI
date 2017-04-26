@@ -35,6 +35,41 @@ namespace {
                             'email' => 'required|email|unique:profiles',
                             'slack' => 'alpha_dash',
                             'trello' => 'alpha_dash',
+                            'github' => 'alpha_dash'
+                        ],
+                        'messages' => [
+                            'name.regex' => 'Full name needed, at least 2 words.'
+                        ],
+                        'resource' => 'accounts',
+                        'acl' => [
+                            'standard' => [
+                                'editable' => [
+                                    'name',
+                                    'password',
+                                    'email',
+                                    'slack',
+                                    'trello',
+                                    'github'
+                                ],
+                                'GET' => true,
+                                'DELETE' => false,
+                                'POST' => false
+                            ],
+                            'guest' => [
+                                'editable' => [],
+                                'GET' => true,
+                                'DELETE' => false,
+                                'POST' => true
+                            ]
+                        ]
+                    ],
+                    [
+                        'fields' => [
+                            'name' => 'required|regex:/\\w+ \\w+/',
+                            'password' => 'required|min:8',
+                            'email' => 'required|email|unique:profiles',
+                            'slack' => 'alpha_dash',
+                            'trello' => 'alpha_dash',
                             'github' => 'alpha_dash',
                             'xp' => 'numeric',
                             'xp_id' => 'alpha_num',
