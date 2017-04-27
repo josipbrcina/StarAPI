@@ -3,14 +3,60 @@
 namespace App\Http\Controllers;
 
 use App\Account;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\Configuration;
 use App\Helpers\MailSend;
+use Illuminate\Support\Facades\Hash;
 
+/**
+ * Class AccountController
+ * @package App\Http\Controllers
+ */
 class AccountController extends Controller
 {
+    /**
+     * AccountController constructor.
+     * @param Request $request
+     * @throws \Exception
+     */
+    public function __construct(Request $request)
+    {
+        parent::__construct($request);
+        if ($request->route('appName') !== 'accounts') {
+            throw new \Exception('Wrong application name. Should be accounts.', 400);
+        }
+    }
+
+    /**
+     * Returns current user if there, otherwise HTTP 401
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function current()
+    {
+        $account = Auth::user();
+
+        if (!$account) {
+            return $this->jsonError('User not logged in.', 401);
+        }
+
+        return $this->jsonSuccess($account);
+    }
+
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index()
+    {
+        $accounts = Account::all();
+        return $this->jsonSuccess($accounts);
+    }
+
     /**
      * Accepts email and password, returns authentication token on success and (bool) false on failed login
      *
@@ -19,10 +65,6 @@ class AccountController extends Controller
      */
     public function login(Request $request)
     {
-        if ($request->route('appName') !== 'accounts') {
-            return $this->jsonError(['Wrong application name. Should be accounts.'], 400);
-        }
-
         $credentials = $request->only('email', 'password');
 
         if (!$token = JWTAuth::attempt($credentials)) {
@@ -42,10 +84,6 @@ class AccountController extends Controller
      */
     public function store(Request $request)
     {
-        if ($request->route('appName') !== 'accounts') {
-            return $this->jsonError(['Wrong application name. Should be accounts.'], 400);
-        }
-
         $fields = $request->all();
         $this->validateInputsForResource($fields, 'accounts');
 
@@ -87,10 +125,6 @@ class AccountController extends Controller
      */
     public function show(Request $request)
     {
-        if ($request->route('appName') !== 'accounts') {
-            return $this->jsonError(['Wrong application name. Should be accounts.'], 400);
-        }
-
         $account = Account::find($request->route('accounts'));
         if (!$account) {
             return $this->jsonError('Account not found.', 404);
@@ -104,10 +138,6 @@ class AccountController extends Controller
      */
     public function update(Request $request)
     {
-        if ($request->route('appName') !== 'accounts') {
-            return $this->jsonError(['Wrong application name. Should be accounts.'], 400);
-        }
-
         $account = Account::find($request->route('accounts'));
 
         if (!$account instanceof Account) {
@@ -180,7 +210,7 @@ class AccountController extends Controller
      */
     public function destroy(Request $request)
     {
-        $account = Account::find($request->route('profiles'));
+        $account = Account::find($request->route('accounts'));
 
         if (!$account instanceof Account) {
             return $this->jsonError('Account not found.', 404);

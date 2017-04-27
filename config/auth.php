@@ -67,7 +67,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Profile::class,
+            'model' => App\Account::class,
         ],
 
         // 'users' => [
@@ -103,5 +103,4 @@ return [
             'expire' => 60,
         ],
     ],
-
 ];

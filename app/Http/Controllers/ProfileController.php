@@ -7,14 +7,11 @@ use App\GenericModel;
 use App\Helpers\InputHandler;
 use App\Services\ProfilePerformance;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Profile;
 use Illuminate\Http\Request;
 use App\Helpers\Configuration;
 use App\Helpers\MailSend;
-use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 
 /**
@@ -388,5 +385,13 @@ class ProfileController extends Controller
         }
 
         return $this->jsonError('Issue with saving resource.');
+    }
+
+    public function joinApplication(Request $request)
+    {
+    }
+
+    public function leaveApplication(Request $request)
+    {
     }
 }

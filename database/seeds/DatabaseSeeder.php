@@ -23,6 +23,8 @@ namespace {
             $this->call(UserRolesSeeder::class);
             $this->call(FeedbackFormsSeeder::class);
             $this->call(HourlyRatePerSkillSeeder::class);
+            $this->call(AccountValidationsSeeder::class);
+            $this->call(AccountAclCollectionSeeder::class);
             $this->call(ApplicationRegistrationSeeder::class);
         }
     }

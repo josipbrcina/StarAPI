@@ -25,9 +25,6 @@ class Account extends StarModel implements AuthenticatableContract, CanResetPass
         'name',
         'email',
         'password',
-        'trello',
-        'github',
-        'slack',
         'applications'
     ];
 
