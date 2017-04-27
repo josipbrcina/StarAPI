@@ -204,34 +204,40 @@ class ProfileController extends Controller
 
         $profile = Profile::find($authenticatedUser->_id);
 
-        if ($profile && $profile->accountActive === true) {
+        if (!$profile) {
+            $fields = $request->all();
+            $this->validateInputsForResource($fields, 'profiles');
+
+            $profileToSave = Profile::createForAccount($authenticatedUser->_id, $fields);
+
+            // Send confirmation E-mail upon profile creation on the platform
+
+            $teamSlackInfo = Configuration::getConfiguration(true);
+            if ($teamSlackInfo === false) {
+                $teamSlackInfo = [];
+            }
+
+            $data = [
+                'name' => $profileToSave->name,
+                'email' => $profileToSave->email,
+                'github' => $profileToSave->github,
+                'trello' => $profileToSave->trello,
+                'slack' => $profileToSave->slack,
+                'teamSlack' => $teamSlackInfo
+            ];
+            $view = 'emails.registration';
+            $subject = 'Welcome to new application!';
+
+            MailSend::send($view, $data, $profileToSave, $subject);
+        }
+
+        if ($profile->accountActive === true) {
             return $this->jsonError('Permission denied. Profile already exists in this application.', 403);
+        } else {
+            $profileToSave = $profile;
+            $profileToSave->accountActive = true;
+            $profileToSave->save();
         }
-
-        $fields = $request->all();
-        $this->validateInputsForResource($fields, 'profiles');
-
-        $createdProfile = Profile::createForAccount($authenticatedUser->_id, $fields);
-
-        // Send confirmation E-mail upon profile creation on the platform
-
-        $teamSlackInfo = Configuration::getConfiguration(true);
-        if ($teamSlackInfo === false) {
-            $teamSlackInfo = [];
-        }
-
-        $data = [
-            'name' => $createdProfile->name,
-            'email' => $createdProfile->email,
-            'github' => $createdProfile->github,
-            'trello' => $createdProfile->trello,
-            'slack' => $createdProfile->slack,
-            'teamSlack' => $teamSlackInfo
-        ];
-        $view = 'emails.registration';
-        $subject = 'Welcome to new application!';
-
-        MailSend::send($view, $data, $createdProfile, $subject);
 
         // Connect to account database
         $applicationName = $request->route('appName');
@@ -248,7 +254,7 @@ class ProfileController extends Controller
         // Connect back to application database
         AuthHelper::setDatabaseConnection($applicationName);
 
-        return $this->jsonSuccess($createdProfile);
+        return $this->jsonSuccess($profileToSave);
     }
 
     /**
@@ -446,5 +452,9 @@ class ProfileController extends Controller
         AuthHelper::setDatabaseConnection($applicationName);
 
         return $this->jsonSuccess('You have successfully left application.');
+    }
+
+    public function createApplication(Request $request)
+    {
     }
 }

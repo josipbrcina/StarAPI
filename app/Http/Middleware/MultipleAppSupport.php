@@ -36,7 +36,19 @@ class MultipleAppSupport
             }
         }
 
-        //if database exists set database name
+        $method = $request->method();
+        $url = $request->url();
+        $createApp = 'application/create';
+
+        // Allow create application to set database to new one if Db doesn't exist
+        if ($request->route('appName') !== 'accounts'
+            && $method === 'POST'
+            && strlen($url) - strlen($createApp) === strpos($url, $createApp)
+        ) {
+            return $next($request);
+        }
+
+        // If database exists set database name
         if ($dbName !== $requestDbName && in_array($requestDbName, $databaseNames)) {
             Config::set('database.connections.mongodb.database', $requestDbName);
         }

@@ -55,21 +55,27 @@ class JwtAuth extends BaseMiddleware
         see if there is profile related to that account*/
         $method = $request->method();
         $url = $request->url();
-        $search = '/profiles';
+        $joinApp = '/application/join';
+        $leaveApp = '/application/leave';
+        $createApp = 'application/create';
 
         // Allow only "join application" route otherwise do validation
         if ($request->route('appName') !== 'accounts'
-            && $method !== 'POST'
-            && strlen($url) - strlen($search) !== strpos($url, $search)
+            && $method === 'POST'
+            && (strlen($url) - strlen($joinApp) === strpos($url, $joinApp)
+                || strlen($url) - strlen($leaveApp) === strpos($url, $leaveApp)
+                || strlen($url) - strlen($createApp) === strpos($url, $createApp))
         ) {
-            if (!in_array($request->route('appName'), $userCheck->applications)) {
-                return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
-            }
+            return $next($request);
+        }
 
-            GenericModel::setCollection('profiles');
-            if (GenericModel::where('_id', '=', $userCheck->_id) === null) {
-                return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
-            }
+        if (!in_array($request->route('appName'), $userCheck->applications)) {
+            return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
+        }
+
+        GenericModel::setCollection('profiles');
+        if (GenericModel::where('_id', '=', $userCheck->_id) === null) {
+            return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
         }
 
         return $next($request);

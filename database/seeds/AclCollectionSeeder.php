@@ -50,6 +50,7 @@ namespace {
                                 "api/v1/app/{appName}/{resource}",
                                 "api/v1/app/{appName}/application/join",
                                 "api/v1/app/{appName}/application/leave",
+                                "api/v1/app/{appName}/application/create",
                                 'api/v1/app/{appName}/slack/message'
                             ],
                             'PATCH' => [
