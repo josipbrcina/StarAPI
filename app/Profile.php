@@ -44,10 +44,11 @@ class Profile extends StarModel implements AuthenticatableContract, CanResetPass
      * @param  array  $attributes
      * @return static
      */
-    public static function create(array $attributes = [])
+    public static function createForAccount($accountId, array $attributes = [])
     {
         $model = new static($attributes);
 
+        $model->_id = $accountId;
         $model->xp = 50;
         $model->role = 'standard';
         $model->minimumsMissed = 0;

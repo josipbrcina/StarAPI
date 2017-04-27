@@ -33,6 +33,7 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
     Route::group(['middleware' => ['jwt.auth', 'jwt.refresh', 'acl']], function () {
         Route::post('application/join', 'ProfileController@store');
         Route::post('application/leave', 'ProfileController@leaveApplication');
+        Route::post('application/create', 'ProfileController@createApplication');
         Route::put('accounts/changePassword', 'AccountController@changePassword');
         Route::get('profiles/{id}/performance', 'ProfileController@getPerformance');
         Route::get('profiles/{id}/feedback', 'ProfileController@getFeedback');

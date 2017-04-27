@@ -211,7 +211,7 @@ class ProfileController extends Controller
         $fields = $request->all();
         $this->validateInputsForResource($fields, 'profiles');
 
-        $createdProfile = Profile::create($fields);
+        $createdProfile = Profile::createForAccount($authenticatedUser->_id, $fields);
 
         // Send confirmation E-mail upon profile creation on the platform
 
@@ -408,7 +408,43 @@ class ProfileController extends Controller
         return $this->jsonError('Issue with saving resource.');
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function leaveApplication(Request $request)
     {
+        $authenticatedUser = AuthHelper::getAuthenticatedUser();
+
+        if (!in_array($request->route('appName'), $authenticatedUser->applications)) {
+            return $this->jsonError('Permission denied. Not a member of this application.', 403);
+        }
+
+        $profile = Profile::find($authenticatedUser->_id);
+
+        if ($profile && $profile->accountActive === false) {
+            return $this->jsonError('Permission denied. Profile already left this application.', 403);
+        }
+
+        // Add tag that profile is removed from application
+        $profile->accountActive = false;
+        $profile->save();
+
+        // Connect to account database
+        $applicationName = $request->route('appName');
+        AuthHelper::setDatabaseConnection();
+
+        // Update account model
+        GenericModel::setCollection('accounts');
+        $account = GenericModel::find($authenticatedUser->_id);
+        $applicationsArray = $account->applications;
+        $applicationsArray = array_diff($applicationsArray, [$applicationName]);
+        $account->applications = $applicationsArray;
+        $account->save();
+
+        // Connect back to application database
+        AuthHelper::setDatabaseConnection($applicationName);
+
+        return $this->jsonSuccess('You have successfully left application.');
     }
 }
