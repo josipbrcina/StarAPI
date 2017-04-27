@@ -51,6 +51,7 @@ class Profile extends StarModel implements AuthenticatableContract, CanResetPass
         $model->xp = 50;
         $model->role = 'standard';
         $model->minimumsMissed = 0;
+        $model->accountActive = true;
 
         $model->save();
 

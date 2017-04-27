@@ -7,7 +7,6 @@ use App\GenericModel;
 use App\Helpers\AuthHelper;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Middleware\BaseMiddleware;
 
 class JwtAuth extends BaseMiddleware
@@ -25,6 +24,7 @@ class JwtAuth extends BaseMiddleware
             return $this->response->json(['errors' => ["Not logged in."]], 401);
         }
 
+        // Set database connection to "accounts"
         AuthHelper::setDatabaseConnection();
 
         $user = $this->auth->authenticate($token);
@@ -41,25 +41,36 @@ class JwtAuth extends BaseMiddleware
             return $this->response->json(['errors' => ["Not logged in."]], 401);
         }
 
-        $coreDatabaseName = \Config::get('sharedSettings.internalConfiguration.coreDatabaseName');
+        $coreDatabaseName = Config::get('sharedSettings.internalConfiguration.coreDatabaseName');
         // If user is admin and request route is core database, set connection and allow admins to write into database
         if ($userCheck->admin === true && $coreDatabaseName === strtolower($request->route('appName'))) {
-            $defaultDb = Config::get('database.default');
-            Config::set('database.connections.mongodb.database', $coreDatabaseName);
-            DB::purge($defaultDb);
-            DB::connection($defaultDb);
+            AuthHelper::setDatabaseConnection($coreDatabaseName);
             return $next($request);
         }
 
-        GenericModel::setCollection('profiles');
-        if (!in_array($request->route('appName'), $userCheck->applications)) {
-            return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
-        }
-        if (GenericModel::where('_id', '=', $userCheck->_id) === null) {
-            return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
-        }
-
+        // Set database connection to request "appName"
         AuthHelper::setDatabaseConnection($request->route('appName'));
+
+        /*Check account applications to see if he is registered to requested app and check application profiles to
+        see if there is profile related to that account*/
+        $method = $request->method();
+        $url = $request->url();
+        $search = '/profiles';
+
+        // Allow only "join application" route otherwise do validation
+        if ($request->route('appName') !== 'accounts'
+            && $method !== 'POST'
+            && strlen($url) - strlen($search) !== strpos($url, $search)
+        ) {
+            if (!in_array($request->route('appName'), $userCheck->applications)) {
+                return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
+            }
+
+            GenericModel::setCollection('profiles');
+            if (GenericModel::where('_id', '=', $userCheck->_id) === null) {
+                return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
+            }
+        }
 
         return $next($request);
     }

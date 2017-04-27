@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\ProfileUpdate;
 use App\GenericModel;
+use App\Helpers\AuthHelper;
 use App\Helpers\InputHandler;
 use App\Services\ProfilePerformance;
 use Illuminate\Support\Facades\Auth;
@@ -195,19 +196,24 @@ class ProfileController extends Controller
      */
     public function store(Request $request)
     {
+        $authenticatedUser = AuthHelper::getAuthenticatedUser();
+
+        if (in_array($request->route('appName'), $authenticatedUser->applications)) {
+            return $this->jsonError('Permission denied. Already member of this application.', 403);
+        }
+
+        $profile = Profile::find($authenticatedUser->_id);
+
+        if ($profile && $profile->accountActive === true) {
+            return $this->jsonError('Permission denied. Profile already exists in this application.', 403);
+        }
+
         $fields = $request->all();
         $this->validateInputsForResource($fields, 'profiles');
 
-        $profile = Profile::create($fields);
+        $createdProfile = Profile::create($fields);
 
-        $credentials = $request->only('email', 'password');
-        if (!$token = JWTAuth::attempt($credentials)) {
-            return $this->jsonError(['Issue with automatic sign in.'], 401);
-        }
-
-        JWTAuth::setToken($token);
-
-        //send confirmation E-mail upon profile creation on the platform
+        // Send confirmation E-mail upon profile creation on the platform
 
         $teamSlackInfo = Configuration::getConfiguration(true);
         if ($teamSlackInfo === false) {
@@ -215,19 +221,34 @@ class ProfileController extends Controller
         }
 
         $data = [
-            'name' => $profile->name,
-            'email' => $profile->email,
-            'github' => $profile->github,
-            'trello' => $profile->trello,
-            'slack' => $profile->slack,
+            'name' => $createdProfile->name,
+            'email' => $createdProfile->email,
+            'github' => $createdProfile->github,
+            'trello' => $createdProfile->trello,
+            'slack' => $createdProfile->slack,
             'teamSlack' => $teamSlackInfo
         ];
         $view = 'emails.registration';
-        $subject = 'Welcome to The Shop platform!';
+        $subject = 'Welcome to new application!';
 
-        MailSend::send($view, $data, $profile, $subject);
+        MailSend::send($view, $data, $createdProfile, $subject);
 
-        return $this->jsonSuccess($profile);
+        // Connect to account database
+        $applicationName = $request->route('appName');
+        AuthHelper::setDatabaseConnection();
+
+        // Update account model
+        GenericModel::setCollection('accounts');
+        $account = GenericModel::find($authenticatedUser->_id);
+        $applicationsArray = $account->applications;
+        $applicationsArray[] = $applicationName;
+        $account->applications = $applicationsArray;
+        $account->save();
+
+        // Connect back to application database
+        AuthHelper::setDatabaseConnection($applicationName);
+
+        return $this->jsonSuccess($createdProfile);
     }
 
     /**
@@ -385,10 +406,6 @@ class ProfileController extends Controller
         }
 
         return $this->jsonError('Issue with saving resource.');
-    }
-
-    public function joinApplication(Request $request)
-    {
     }
 
     public function leaveApplication(Request $request)

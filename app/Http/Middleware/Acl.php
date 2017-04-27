@@ -2,8 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Helpers\AuthHelper;
+use App\Profile;
 use Closure;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use App\Helpers\AclHelper;
 
@@ -21,7 +22,11 @@ class Acl
         $routeUri = $request->route()->getUri();
         $routeMethod = $request->method();
 
-        $user = Auth::user();
+        $user = AuthHelper::getAuthenticatedUser();
+        $profile = Profile::find($user->_id);
+        if ($profile) {
+            $user = $profile;
+        }
 
         if ($user && $user->admin === true) {
             return $next($request);

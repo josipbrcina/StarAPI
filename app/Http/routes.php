@@ -31,6 +31,8 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
 
     // Define a group of APIs that require auth (we use JWT Auth for token authorization)
     Route::group(['middleware' => ['jwt.auth', 'jwt.refresh', 'acl']], function () {
+        Route::post('application/join', 'ProfileController@store');
+        Route::post('application/leave', 'ProfileController@leaveApplication');
         Route::put('accounts/changePassword', 'AccountController@changePassword');
         Route::get('profiles/{id}/performance', 'ProfileController@getPerformance');
         Route::get('profiles/{id}/feedback', 'ProfileController@getFeedback');
@@ -83,8 +85,6 @@ Route::group(['prefix' => 'api/v1/app/{appName}', 'middleware' => ['multiple-app
         Route::delete('{resource}/{id}', 'GenericResourceController@destroy')->middleware(['the-shop.genericResource', 'adapters']);
         Route::put('{resource}/{id}/restore', 'GenericResourceController@restore')->middleware(['the-shop.genericResource', 'adapters']);
         Route::post('{resource}/register', 'GenericResourceController@store')->middleware(['the-shop.genericResource', 'adapters']);
-        Route::post('{resource}/application/join', 'ProfileController@joinApplication')->middleware(['the-shop.genericResource', 'adapters']);
-        Route::post('{resource}/application/leave', 'ProfileController@leaveApplication')->middleware(['the-shop.genericResource', 'adapters']);
     });
 });
 
