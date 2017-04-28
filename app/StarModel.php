@@ -16,11 +16,12 @@ class StarModel extends Eloquent
     public static function boot()
     {
         parent::boot();
-        if (!\Auth::guest()) {
+        // TODO: implement user->id on model creation with new auth logic
+        /*if (!\Auth::guest()) {
             static::creating(function ($model) {
                 $userId = \Auth::user()->id;
                 $model->ownerId = $userId;
             });
-        }
+        }*/
     }
 }

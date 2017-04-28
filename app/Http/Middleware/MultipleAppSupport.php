@@ -25,7 +25,7 @@ class MultipleAppSupport
 
         $dbName = Config::get('database.connections.mongodb.database');
 
-        //get list of all databases
+        // Get list of all databases
         $listExistingDatabases = DB::connection('mongodbAdmin')->command(['listDatabases' => true]);
 
         $databaseNames = [];
@@ -36,21 +36,11 @@ class MultipleAppSupport
             }
         }
 
-        $method = $request->method();
-        $url = $request->url();
-        $createApp = 'application/create';
-
-        // Allow create application to set database to new one if Db doesn't exist
-        if ($request->route('appName') !== 'accounts'
-            && $method === 'POST'
-            && strlen($url) - strlen($createApp) === strpos($url, $createApp)
-        ) {
-            return $next($request);
-        }
-
-        // If database exists set database name
+        // If database exists set database name else throw error
         if ($dbName !== $requestDbName && in_array($requestDbName, $databaseNames)) {
             Config::set('database.connections.mongodb.database', $requestDbName);
+        } elseif ($dbName !== $requestDbName && !in_array($requestDbName, $databaseNames)) {
+            return response()->json(['errors' => ['Permission denied. Application not found.']], 401);
         }
 
         return $next($request);

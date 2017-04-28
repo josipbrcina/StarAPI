@@ -89,17 +89,26 @@ class Controller extends BaseController
     }
 
     /**
-     * @param $model
      * @param $fields
      * @param $resourceName
+     * @param null $model
      * @param array $inputOverrides
+     * @param bool $jwtAuthenticated
      * @return bool
      * @throws DynamicValidationException
      */
-    protected function validateInputsForResource(&$fields, $resourceName, $model = null, array $inputOverrides = [])
+    protected function validateInputsForResource(&$fields, $resourceName, $model = null, array $inputOverrides = [], $jwtAuthenticated = true)
     {
-        $user = AuthHelper::getAuthenticatedUser();
-        $profile = Profile::find($user->_id);
+        if ($jwtAuthenticated) {
+            $user = AuthHelper::getAuthenticatedUser();
+        } else {
+            $user = null;
+        }
+
+        $profile = null;
+        if ($user) {
+            $profile = Profile::find($user->_id);
+        }
         if ($profile) {
             $user = $profile;
         }

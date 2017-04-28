@@ -41,41 +41,61 @@ class JwtAuth extends BaseMiddleware
             return $this->response->json(['errors' => ["Not logged in."]], 401);
         }
 
+        $appName = $request->route('appName');
+        $formattedAppName = strtolower($appName);
+
         $coreDatabaseName = Config::get('sharedSettings.internalConfiguration.coreDatabaseName');
         // If user is admin and request route is core database, set connection and allow admins to write into database
-        if ($userCheck->admin === true && $coreDatabaseName === strtolower($request->route('appName'))) {
+        if ($userCheck->admin === true && $coreDatabaseName === $formattedAppName) {
             AuthHelper::setDatabaseConnection($coreDatabaseName);
             return $next($request);
         }
 
         // Set database connection to request "appName"
-        AuthHelper::setDatabaseConnection($request->route('appName'));
+        AuthHelper::setDatabaseConnection($appName);
 
-        /*Check account applications to see if he is registered to requested app and check application profiles to
+        /* Check account applications to see if he is registered to requested app and check application profiles to
         see if there is profile related to that account*/
         $method = $request->method();
-        $url = $request->url();
-        $joinApp = '/application/join';
-        $leaveApp = '/application/leave';
-        $createApp = 'application/create';
+        $uri = $request->getRequestUri();
+        $joinApp = '/api/v1/app/' . $appName . '/application/join';
+        $leaveApp = '/api/v1/app/' . $appName . '/application/leave';
+        $createApp = '/api/v1/app/' . $appName . '/application/create';
 
-        // Allow only "join application" route otherwise do validation
-        if ($request->route('appName') !== 'accounts'
+        // Allow only "join/leave application" route otherwise do validation to see if user exists on application
+        if ($formattedAppName !== 'accounts'
             && $method === 'POST'
-            && (strlen($url) - strlen($joinApp) === strpos($url, $joinApp)
-                || strlen($url) - strlen($leaveApp) === strpos($url, $leaveApp)
-                || strlen($url) - strlen($createApp) === strpos($url, $createApp))
+            && $uri === $joinApp
+            || $uri === $leaveApp
         ) {
             return $next($request);
         }
 
-        if (!in_array($request->route('appName'), $userCheck->applications)) {
-            return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
+        // If route is to create application check if it's correct database - accounts
+        if ($formattedAppName !== 'accounts'
+            && $method === 'POST'
+            && $uri === $createApp
+        ) {
+            return $this->response->json('Wrong database. Should be accounts.', 401);
         }
 
-        GenericModel::setCollection('profiles');
-        if (GenericModel::where('_id', '=', $userCheck->_id) === null) {
-            return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 401);
+        // If route is to create application and database is accounts allow user to create
+        if ($formattedAppName === 'accounts'
+            && $method === 'POST'
+            && $uri === $createApp
+        ) {
+            return $next($request);
+        }
+
+        if ($formattedAppName !== 'accounts') {
+            if (!in_array($appName, $userCheck->applications)) {
+                return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 403);
+            }
+
+            GenericModel::setCollection('profiles');
+            if (GenericModel::where('_id', '=', $userCheck->_id) === null) {
+                return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 403);
+            }
         }
 
         return $next($request);

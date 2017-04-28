@@ -15,11 +15,13 @@ namespace {
          */
         public function run()
         {
+            $oldDatabase = Config::get('database.connections.'.Config::get('database.default').'.database');
             $coreDatabaseName = Config::get('sharedSettings.internalConfiguration.coreDatabaseName');
             Config::set('database.connections.mongodb.database', $coreDatabaseName);
             $defaultDb = Config::get('database.default');
             DB::purge($defaultDb);
             DB::connection($defaultDb);
+
             //check if collection exist
             $collectionList = DB::listCollections();
             $result = [];
@@ -31,6 +33,11 @@ namespace {
             if (!in_array('applications', $result)) {
                 Schema::create('applications');
             }
+
+            Config::set('database.connections.mongodb.database', $oldDatabase);
+            $defaultDb = Config::get('database.default');
+            DB::purge($defaultDb);
+            DB::connection($defaultDb);
         }
     }
 }

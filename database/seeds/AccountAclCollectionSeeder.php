@@ -14,6 +14,7 @@ namespace {
          */
         public function run()
         {
+            $database = Config::get('database.connections.'.Config::get('database.default').'.database');
             Config::set('database.connections.mongodb.database', 'accounts');
             $defaultDb = Config::get('database.default');
             DB::purge($defaultDb);
@@ -31,32 +32,18 @@ namespace {
                         'name' => 'standard',
                         'allows' => [
                             'GET' => [
-                                "api/v1/app/{appName}/{resource}",
-                                "api/v1/app/{appName}/{resource}/{id}",
                                 "api/v1/app/{appName}/configuration",
-                                "api/v1/app/{appName}/profiles",
                                 "api/v1/app/{appName}/accounts",
-                                "api/v1/app/{appName}/profiles/{profiles}",
                                 "api/v1/app/{appName}/accounts/{accounts}",
-                                "api/v1/app/{appName}/slack/users",
-                                "api/v1/app/{appName}/projects/{id}/uploads",
-                                "api/v1/app/{appName}/profiles/{id}/performance"
                             ],
                             'PUT' => [
-                                'api/v1/app/{appName}/profiles/changePassword',
-                                'api/v1/app/{appName}/profiles/{profiles}',
-                                "api/v1/app/{appName}/{resource}/{id}",
-                                "api/v1/app/{appName}/tasks/{id}/makeReservation",
-                                "api/v1/app/{appName}/tasks/{id}/acceptReservation",
-                                "api/v1/app/{appName}/tasks/{id}/declineReservation",
-
+                                'api/v1/app/{appName}/accounts/{accounts}'
                             ],
                             'POST' => [
-                                "api/v1/app/{appName}/{resource}",
-                                'api/v1/app/{appName}/slack/message'
+                                'api/v1/app/{appName}/application/create'
                             ],
                             'PATCH' => [
-                                'api/v1/app/{appName}/profiles/{profiles}'
+                                'api/v1/app/{appName}/accounts/{accounts}'
                             ]
                         ]
                     ],
@@ -69,36 +56,13 @@ namespace {
                             ],
                         ]
                     ],
-                    [
-                        'name' => 'accountant',
-                        'allows' => [
-                            'GET' => [
-                                "api/v1/app/{appName}/profiles",
-                                "api/v1/app/{appName}/profiles/{profiles}",
-                                "api/v1/app/{appName}/configuration"
-                            ],
-                            'PUT' => [
-                                'api/v1/app/{appName}/profiles/changePassword',
-                                'api/v1/app/{appName}/profiles/{profiles}'
-                            ],
-                            'POST' => [
-                                'api/v1/app/{appName}/slack/message'
-                            ],
-                            'PATCH' => [
-                                'api/v1/app/{appName}/profiles/{profiles}'
-                            ]
-                        ]
-                    ],
-                    [
-                        'name' => 'admin',
-                        'allows' => [
-                            'POST' => [
-                                'api/v1/app/{appName}/{resource}/register'
-                            ],
-                        ]
-                    ],
                 ]
             );
+
+            Config::set('database.connections.mongodb.database', $database);
+            $defaultDb = Config::get('database.default');
+            DB::purge($defaultDb);
+            DB::connection($defaultDb);
         }
     }
 }

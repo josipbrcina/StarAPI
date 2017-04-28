@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\FileUploadException;
 use App\GenericModel;
+use App\Helpers\AuthHelper;
+use App\Profile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +15,9 @@ class FileUploadController extends Controller
 {
     public function uploadFile(Request $request)
     {
-        $userId = Auth::user()->id;
+        $account = AuthHelper::getAuthenticatedUser();
+        $user = Profile::find($account->_id);
+        $userId = $user->_id;
 
         if ($request->has('projectId')) {
             $projectId = $request->get('projectId');
@@ -95,5 +99,4 @@ class FileUploadController extends Controller
 
         return $this->jsonSuccess($uploads);
     }
-
 }

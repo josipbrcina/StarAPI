@@ -40,8 +40,8 @@ class Profile extends StarModel implements AuthenticatableContract, CanResetPass
 
     /**
      * Save a new model and return the instance.
-     *
-     * @param  array  $attributes
+     * @param $accountId
+     * @param array $attributes
      * @return static
      */
     public static function createForAccount($accountId, array $attributes = [])

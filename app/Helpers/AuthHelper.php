@@ -22,7 +22,7 @@ class AuthHelper
         if ($connectionName === null) {
             $connectionName = 'accounts';
         }
-        Config::set('database.connections.'. $defaultDb . '.database', $connectionName);
+        Config::set('database.connections.'. $defaultDb . '.database', strtolower($connectionName));
         DB::purge($defaultDb);
         DB::connection($defaultDb);
 
@@ -33,10 +33,14 @@ class AuthHelper
      * Get authenticated user model
      * @return mixed
      */
-    public static function getAuthenticatedUser()
+    public static function getAuthenticatedUser($jwtAuthenticated = true)
     {
         $app = App::getFacadeRoot();
 
-        return $app->authenticatedUser;
+        if ($jwtAuthenticated) {
+            return $app->authenticatedUser;
+        }
+
+        return false;
     }
 }

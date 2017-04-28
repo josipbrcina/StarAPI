@@ -85,7 +85,7 @@ class AccountController extends Controller
     public function store(Request $request)
     {
         $fields = $request->all();
-        $this->validateInputsForResource($fields, 'accounts');
+        $this->validateInputsForResource($fields, 'accounts', null, [], false);
 
         $account = Account::create($fields);
 
@@ -97,7 +97,6 @@ class AccountController extends Controller
         JWTAuth::setToken($token);
 
         //send confirmation E-mail upon profile creation on the platform
-
         $teamSlackInfo = Configuration::getConfiguration(true);
         if ($teamSlackInfo === false) {
             $teamSlackInfo = [];
@@ -149,7 +148,14 @@ class AccountController extends Controller
         }
 
         $fields = $request->all();
-        $this->validateInputsForResource($fields, 'accounts', null, ['email' => 'required|email']);
+        $this->validateInputsForResource(
+            $fields,
+            'accounts',
+            null,
+            [
+                'email' => 'required|email|unique:accounts'
+            ]
+        );
 
         $account->fill($fields);
         

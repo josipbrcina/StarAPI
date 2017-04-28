@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\GenericModel;
+use App\Helpers\AuthHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
@@ -37,9 +38,10 @@ class ReservationController extends Controller
             return $this->jsonError($errors, 403);
         }
 
+        $user = AuthHelper::getAuthenticatedUser();
 
         $reservationsBy = $project->reservationsBy;
-        $reservationsBy[] = ['user_id' => Auth::user()->id, 'timestamp' => $time];
+        $reservationsBy[] = ['user_id' => $user->id, 'timestamp' => $time];
         $project->reservationsBy = $reservationsBy;
         $project->save();
 
@@ -64,7 +66,9 @@ class ReservationController extends Controller
             return $this->jsonError($errors, 403);
         }
 
-        $project->acceptedBy = Auth::user()->id;
+        $user = AuthHelper::getAuthenticatedUser();
+
+        $project->acceptedBy = $user->id;
         $project->save();
 
         return $this->jsonSuccess($project);
@@ -88,8 +92,10 @@ class ReservationController extends Controller
             return $this->jsonError($errors, 403);
         }
 
+        $user = AuthHelper::getAuthenticatedUser();
+
         $declined = $project->declinedBy;
-        $declined[] = ['user_id' => \Auth::user()->id, 'timestamp' => $time];
+        $declined[] = ['user_id' => $user->id, 'timestamp' => $time];
         $project->declinedBy = $declined;
         $project->save();
 
@@ -113,8 +119,10 @@ class ReservationController extends Controller
             return $this->jsonError($errors, 403);
         }
 
+        $user = AuthHelper::getAuthenticatedUser();
+
         $reservationsBy = $task->reservationsBy;
-        $reservationsBy[] = ['user_id' => Auth::user()->id, 'timestamp' => $time];
+        $reservationsBy[] = ['user_id' => $user, 'timestamp' => $time];
         $task->reservationsBy = $reservationsBy;
 
         event(new GenericModelUpdate($task));
@@ -143,7 +151,9 @@ class ReservationController extends Controller
             return $this->jsonError($errors, 403);
         }
 
-        $task->owner = Auth::user()->id;
+        $user = AuthHelper::getAuthenticatedUser();
+
+        $task->owner = $user->id;
 
         event(new GenericModelUpdate($task));
 
@@ -171,8 +181,10 @@ class ReservationController extends Controller
             return $this->jsonError($errors, 403);
         }
 
+        $user = AuthHelper::getAuthenticatedUser();
+
         $declined = $task->declinedBy;
-        $declined[] = ['user_id' => \Auth::user()->id, 'timestamp' => $time];
+        $declined[] = ['user_id' => $user->id, 'timestamp' => $time];
         $task->declinedBy = $declined;
 
         event(new GenericModelUpdate($task));
@@ -194,6 +206,8 @@ class ReservationController extends Controller
      */
     private function validateReservation(GenericModel $model = null, &$errors, $time, $action)
     {
+        $user = AuthHelper::getAuthenticatedUser();
+
         //error messages
         $errorMessages = [
             'empty' => 'ID not found.',
@@ -219,7 +233,7 @@ class ReservationController extends Controller
         //check if model is already declined by current user
         if (isset($model->declinedBy)) {
             foreach ($model->declinedBy as $declined) {
-                if ($declined['user_id'] === Auth::user()->id) {
+                if ($declined['user_id'] === $user->id) {
                     $errors[] = $model['collection'] === 'projects' ?
                         str_replace('%m', 'Project', $errorMessages['declined'])
                         : str_replace('%m', 'Task', $errorMessages['declined']);
@@ -250,11 +264,11 @@ class ReservationController extends Controller
                 //check if user already reserved and time passed, if so add flag declinedBy and return error
                 if ($action === (self::MAKE_RESERVATION || self::ACCEPT_OR_DECLINE)
                     && ($time - $reserved['timestamp'] >= ($reservationTime * 60))
-                    && $reserved['user_id'] === Auth::user()->id
+                    && $reserved['user_id'] === $user->id
                     && empty($model['collection'] === 'projects' ? $model->acceptedBy : $model->owner)
                 ) {
                     $declined = $model->declinedBy;
-                    $declined[] = ['user_id' => Auth::user()->id, 'timestamp' => $time];
+                    $declined[] = ['user_id' => $user->id, 'timestamp' => $time];
                     $model->declinedBy = $declined;
                     $model->save();
 
@@ -266,7 +280,7 @@ class ReservationController extends Controller
                 //for accept or decline actions on already reserved project/task check time and user ID for permission
                 if ($action === self::ACCEPT_OR_DECLINE
                     && ($time - $reserved['timestamp'] <= ($reservationTime * 60))
-                    && ($reserved['user_id'] !== Auth::user()->id)
+                    && ($reserved['user_id'] !== $user->id)
                 ) {
                     $errors[] = $errorMessages['denied'];
                 }

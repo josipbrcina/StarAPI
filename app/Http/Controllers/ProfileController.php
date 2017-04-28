@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Events\ProfileUpdate;
 use App\GenericModel;
 use App\Helpers\AuthHelper;
+use App\Helpers\DatabaseSeeder;
 use App\Helpers\InputHandler;
 use App\Services\ProfilePerformance;
-use Illuminate\Support\Facades\Auth;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Profile;
 use Illuminate\Http\Request;
 use App\Helpers\Configuration;
 use App\Helpers\MailSend;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class ProfileController
@@ -28,7 +29,8 @@ class ProfileController extends Controller
      */
     public function current()
     {
-        $profile = Auth::user();
+        $account = AuthHelper::getAuthenticatedUser();
+        $profile = Profile::find($account->_id);
 
         if (!$profile) {
             return $this->jsonError('User not logged in.', 401);
@@ -204,39 +206,34 @@ class ProfileController extends Controller
 
         $profile = Profile::find($authenticatedUser->_id);
 
+        if ($profile && $profile->accountActive === true) {
+            return $this->jsonError('Permission denied. Profile already exists in this application.', 403);
+        }
+
+        if ($profile && $profile->accountActive === false) {
+            $profileToSave = $profile;
+            $profileToSave->accountActive = true;
+            $profileToSave->save();
+        }
+
         if (!$profile) {
             $fields = $request->all();
             $this->validateInputsForResource($fields, 'profiles');
 
             $profileToSave = Profile::createForAccount($authenticatedUser->_id, $fields);
 
-            // Send confirmation E-mail upon profile creation on the platform
-
-            $teamSlackInfo = Configuration::getConfiguration(true);
-            if ($teamSlackInfo === false) {
-                $teamSlackInfo = [];
-            }
-
+            // Send confirmation E-mail upon profile creation on the application
             $data = [
                 'name' => $profileToSave->name,
                 'email' => $profileToSave->email,
                 'github' => $profileToSave->github,
                 'trello' => $profileToSave->trello,
                 'slack' => $profileToSave->slack,
-                'teamSlack' => $teamSlackInfo
             ];
-            $view = 'emails.registration';
+            $view = 'emails.application-joined';
             $subject = 'Welcome to new application!';
 
             MailSend::send($view, $data, $profileToSave, $subject);
-        }
-
-        if ($profile->accountActive === true) {
-            return $this->jsonError('Permission denied. Profile already exists in this application.', 403);
-        } else {
-            $profileToSave = $profile;
-            $profileToSave->accountActive = true;
-            $profileToSave->save();
         }
 
         // Connect to account database
@@ -340,7 +337,7 @@ class ProfileController extends Controller
             return $this->jsonError(['Method not allowed. Model already exists.'], 403);
         }
 
-         $requestFields = $request->all();
+        $requestFields = $request->all();
         if (empty($requestFields)) {
             $requestFields = [];
         }
@@ -393,7 +390,7 @@ class ProfileController extends Controller
                 [
                     'dateFrom' => $requestFields['dateFrom'],
                     'dateTo' => $requestFields['dateTo'],
-                    'recordTimestamp' => (int) Carbon::now()->format('U')
+                    'recordTimestamp' => (int)Carbon::now()->format('U')
                 ]
             ]
         ];
@@ -454,7 +451,75 @@ class ProfileController extends Controller
         return $this->jsonSuccess('You have successfully left application.');
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function createApplication(Request $request)
     {
+        $requestedAppName = strtolower($request->get('appName'));
+        if (empty($requestedAppName)) {
+            return $this->jsonError('Missing appName field.', 403);
+        }
+
+        // Get list of all databases
+        $listExistingDatabases = DB::connection('mongodbAdmin')->command(['listDatabases' => true]);
+
+        $databaseNames = [];
+        foreach ($listExistingDatabases as $dbResult) {
+            $databasesBsonList = $dbResult->databases->getArrayCopy();
+            foreach ($databasesBsonList as $dbInfo) {
+                $databaseNames[] = $dbInfo->name;
+            }
+        }
+        // Check is application already exists with requested name
+        if (in_array($requestedAppName, $databaseNames)) {
+            return $this->jsonError('Permission denied. Application with that name already exists.', 403);
+        }
+
+        $authenticatedUser = AuthHelper::getAuthenticatedUser();
+
+        $fields = $request->all();
+        $fields['name'] = $authenticatedUser->name;
+        $fields['email'] = $authenticatedUser->email;
+
+        $this->validateInputsForResource($fields, 'profiles');
+
+        // Set database to requested application name
+        AuthHelper::setDatabaseConnection($requestedAppName);
+        DatabaseSeeder::seedApplicationDatabase();
+
+        $profileToSave = Profile::createForAccount($authenticatedUser->_id, $fields);
+        $profileToSave->admin = true;
+        $profileToSave->save();
+
+        // Send confirmation E-mail upon profile creation on the application
+
+        $data = [
+            'name' => $profileToSave->name,
+            'email' => $profileToSave->email,
+            'appName' => $requestedAppName
+        ];
+
+        $view = 'emails.application-created';
+        $subject = 'New application created!';
+
+        MailSend::send($view, $data, $profileToSave, $subject);
+
+        // Connect to account database
+        AuthHelper::setDatabaseConnection();
+
+        // Update account model
+        GenericModel::setCollection('accounts');
+        $account = GenericModel::find($authenticatedUser->_id);
+        $applicationsArray = $account->applications;
+        $applicationsArray[] = $requestedAppName;
+        $account->applications = $applicationsArray;
+        $account->save();
+
+        // Connect back to application database
+        AuthHelper::setDatabaseConnection($requestedAppName);
+
+        return $this->jsonSuccess('Successfully created new application.');
     }
 }

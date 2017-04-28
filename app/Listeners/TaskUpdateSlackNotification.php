@@ -6,8 +6,8 @@ use App\Events\TaskUpdateSlackNotify;
 use App\GenericModel;
 use App\Helpers\Slack;
 use App\Profile;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use App\Helpers\AuthHelper;
 
 class TaskUpdateSlackNotification
 {
@@ -19,6 +19,7 @@ class TaskUpdateSlackNotification
      */
     public function handle(TaskUpdateSlackNotify $event)
     {
+        $user = AuthHelper::getAuthenticatedUser();
         $task = $event->model;
         $preSetCollection = GenericModel::getCollection();
 
@@ -43,11 +44,11 @@ class TaskUpdateSlackNotification
             }
         }
 
-        if ($projectOwner && $projectOwner->slack && $projectOwner->_id !== Auth::user()->_id) {
+        if ($projectOwner && $projectOwner->slack && $projectOwner->_id !== $user->_id) {
             $recipients[] = '@' . $projectOwner->slack;
         }
 
-        if ($taskOwner && $taskOwner->slack && $taskOwner->_id !== Auth::user()->_id) {
+        if ($taskOwner && $taskOwner->slack && $taskOwner->_id !== $user->_id) {
             $recipients[] = '@' . $taskOwner->slack;
         }
 
@@ -58,7 +59,7 @@ class TaskUpdateSlackNotification
         $message = 'Task *'
             . $task->title
             . '* was just updated by *'
-            . Auth::user()->name
+            . $user->name
             . '* '
             . $webDomain
             . 'projects/'

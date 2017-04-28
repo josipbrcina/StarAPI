@@ -7,6 +7,7 @@ use Tests\Collections\ProfileRelated;
 use Tests\Collections\ProjectRelated;
 use Tests\TestCase;
 use App\Profile;
+use Illuminate\Support\Facades\App;
 
 /**
  * Class Task
@@ -41,6 +42,8 @@ class TaskTest extends TestCase
         $task->blocked = true;
         $task->save();
 
+        $app = App::getFacadeRoot();
+        $app->instance('authenticatedUser', $this->profile);
         $taskAdapter = new \App\Adapters\Task($task);
         $out = $taskAdapter->process();
 
@@ -55,6 +58,9 @@ class TaskTest extends TestCase
         $task = $this->getAssignedTask();
         $task->qa_in_progress = true;
         $task->save();
+
+        $app = App::getFacadeRoot();
+        $app->instance('authenticatedUser', $this->profile);
 
         $taskAdapter = new \App\Adapters\Task($task);
         $out = $taskAdapter->process();
@@ -71,6 +77,10 @@ class TaskTest extends TestCase
         $task = $this->getAssignedTask();
         $task->due_date = Carbon::now()->format('U');
         $task->save();
+
+        $app = App::getFacadeRoot();
+        $app->instance('authenticatedUser', $this->profile);
+
 
         $taskAdapter = new \App\Adapters\Task($task);
         $out = $taskAdapter->process();
@@ -98,6 +108,9 @@ class TaskTest extends TestCase
         $task->due_date = Carbon::now()->addDays(3)->format('U');
         $task->save();
 
+        $app = App::getFacadeRoot();
+        $app->instance('authenticatedUser', $this->profile);
+
         $taskAdapter = new \App\Adapters\Task($task);
         $out = $taskAdapter->process();
 
@@ -120,6 +133,9 @@ class TaskTest extends TestCase
         $task = $this->getAssignedTask();
         $task->due_date = Carbon::now()->addDays(10)->format('U');
         $task->save();
+
+        $app = App::getFacadeRoot();
+        $app->instance('authenticatedUser', $this->profile);
 
         $taskAdapter = new \App\Adapters\Task($task);
         $out = $taskAdapter->process();

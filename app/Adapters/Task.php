@@ -3,6 +3,7 @@
 namespace App\Adapters;
 
 use App\GenericModel;
+use App\Helpers\AuthHelper;
 use App\Helpers\InputHandler;
 use App\Profile;
 use App\Services\ProfilePerformance;
@@ -38,7 +39,8 @@ class Task implements AdaptersInterface
         $profilePerformance = new ProfilePerformance();
 
         $taskViewPermission = false;
-        $profile = Auth::user();
+        $account = AuthHelper::getAuthenticatedUser();
+        $profile = Profile::find($account->_id);
 
         // Check if task has got owner
         if (!empty($this->task->owner)) {

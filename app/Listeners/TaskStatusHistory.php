@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use Illuminate\Support\Facades\Config;
 use App\Profile;
+use App\Helpers\AuthHelper;
 
 class TaskStatusHistory
 {
@@ -23,6 +24,7 @@ class TaskStatusHistory
             $date = new \DateTime();
             $unixTime = $date->format('U');
             $taskOwner = Profile::find($task->owner);
+            $user = AuthHelper::getAuthenticatedUser();
 
             //update task_history if task is claimed or assigned
             if (key_exists('owner', $newValues)) {
@@ -31,10 +33,10 @@ class TaskStatusHistory
                 $taskHistory[] = [
                     'user' => $taskOwner->_id,
                     'timestamp' => (int)($unixTime . '000'),
-                    'event' => str_replace('%s', $taskOwner->name, $taskOwner->_id === \Auth::user()->id ?
+                    'event' => str_replace('%s', $taskOwner->name, $taskOwner->_id === $user->id ?
                         $taskHistoryStatuses['claimed']
                         : $taskHistoryStatuses['assigned']),
-                    'status' => $taskOwner->_id === \Auth::user()->id ? 'claimed' : 'assigned'
+                    'status' => $taskOwner->_id === $user->id ? 'claimed' : 'assigned'
                 ];
             }
 

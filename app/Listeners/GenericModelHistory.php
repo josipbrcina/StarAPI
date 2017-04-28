@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\GenericModel;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\AuthHelper;
 
 class GenericModelHistory
 {
@@ -15,6 +16,7 @@ class GenericModelHistory
     {
         $model = $event->model;
         if ($model->isDirty()) {
+            $user = AuthHelper::getAuthenticatedUser();
             $newAllAttributes = $model->getAttributes();
             $newValues = $model->getDirty();
             $oldValues = $model->getOriginal();
@@ -26,7 +28,7 @@ class GenericModelHistory
             foreach ($newValues as $newField => $newValue) {
                 if (key_exists($newField, $oldValues)) {
                     $history[] = [
-                        'profileId' => Auth::user()->id,
+                        'profileId' => $user->id,
                         'filedName' => $newField,
                         'oldValue' => $oldValues[$newField],
                         'newValue' => $newValue,
@@ -34,7 +36,7 @@ class GenericModelHistory
                     ];
                 } else {
                     $history[] = [
-                        'profileId' => Auth::user()->id,
+                        'profileId' => $user->id,
                         'fieldName' => $newField,
                         'oldValue' => null,
                         'newValue' => $newValue,
@@ -46,7 +48,7 @@ class GenericModelHistory
             foreach ($oldValues as $oldFieldName => $oldFieldValue) {
                 if (!key_exists($oldFieldName, $newAllAttributes)) {
                     $history[] = [
-                        'profileId' => Auth::user()->id,
+                        'profileId' => $user->id,
                         'fieldName' => $oldFieldName,
                         'oldValue' => $oldFieldValue,
                         'newValue' => null,
