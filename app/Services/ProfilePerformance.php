@@ -31,21 +31,19 @@ class ProfilePerformance
             throw new UserInputException('Invalid time range input. Must be type of integer');
         }
 
-        // Get all profile tasks
-        GenericModel::setCollection('tasks');
-        $profileTasksUnfinished = GenericModel::where('owner', '=', $profile->id)
-            ->where('passed_qa', '=', false)
-            ->where('timeAssigned', '>=', $unixStart)
-            ->where('timeAssigned', '<=', $unixEnd)
-            ->get();
+        // Get all profile tasks from tasks collection and archived tasks collection
+        $profileTasksUnfinished =
+            $this->getTasksForTimeRange($profile, $unixStart, $unixEnd, false, 'tasks');
+        $profileTasksFinished =
+            $this->getTasksForTimeRange($profile, $unixStart, $unixEnd, true, 'tasks');
+        $profileArchivedTasksUnfinished =
+            $this->getTasksForTimeRange($profile, $unixStart, $unixEnd, false, 'tasks_archived');
+        $profileArchivedTasksFinished =
+            $this->getTasksForTimeRange($profile, $unixStart, $unixEnd, true, 'tasks_archived');
 
-        $profileTasksFinished = GenericModel::where('owner', '=', $profile->id)
-            ->where('passed_qa', '=', true)
-            ->where('timeFinished', '>=', $unixStart)
-            ->where('timeFinished', '<=', $unixEnd)
-            ->get();
-
-        $profileTasks = $profileTasksUnfinished->merge($profileTasksFinished);
+        $tasksForProfile = $profileTasksUnfinished->merge($profileTasksFinished);
+        $archivedTasks = $profileArchivedTasksUnfinished->merge($profileArchivedTasksFinished);
+        $profileTasks = $tasksForProfile->merge($archivedTasks);
 
         $estimatedHours = 0;
         $hoursDelivered = 0;
@@ -86,7 +84,12 @@ class ProfilePerformance
 
             // Get the project if not loaded already
             if (!array_key_exists($task->project_id, $loadedProjects)) {
-                GenericModel::setCollection('projects');
+                if ($task['collection'] === 'tasks') {
+                    GenericModel::setCollection('projects');
+                } else {
+                    GenericModel::setCollection('projects_archived');
+                }
+
                 $loadedProjects[$task->project_id] = GenericModel::find($task->project_id);
             }
 
@@ -614,5 +617,24 @@ class ProfilePerformance
         $aggregated['projectedDifference12Months'] = InputHandler::roundFloat($projectedDifference12Months, 2, 10);
 
         return $aggregated;
+    }
+
+    /**
+     * @param Profile $profile
+     * @param $unixStart
+     * @param $unixEnd
+     * @param $passedQa
+     * @param $collection
+     * @return mixed
+     */
+    private function getTasksForTimeRange(Profile $profile, $unixStart, $unixEnd, $passedQa, $collection)
+    {
+        GenericModel::setCollection($collection);
+
+        return GenericModel::where('owner', '=', $profile->id)
+            ->where('passed_qa', '=', $passedQa)
+            ->where('timeAssigned', '>=', $unixStart)
+            ->where('timeAssigned', '<=', $unixEnd)
+            ->get();
     }
 }
