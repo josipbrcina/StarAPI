@@ -591,7 +591,8 @@ class ProfilePerformanceTest extends TestCase
         $role = $this->profile->employeeRole;
         $baseMinimum = $employeeConfig[$role]['minimumEarnings'];
 
-        $calculatedMinimum = (10 / count($workDays)) * $baseMinimum;
+        $calculatedMinimum = ((count($workDays) - 10) / count($workDays)) * $baseMinimum;
+        $calculatedMinimum = InputHandler::roundFloat($calculatedMinimum, 2, 10);
 
         $pp = new ProfilePerformance();
         $out = $pp->aggregateForTimeRange(
