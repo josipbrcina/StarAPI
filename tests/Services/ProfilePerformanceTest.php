@@ -600,6 +600,7 @@ class ProfilePerformanceTest extends TestCase
             (int) Carbon::now()->format('U'),
             (int) Carbon::now()->addDays(5)->format('U')
         );
+
         $this->assertEquals($calculatedMinimum, $out['roleMinimum']);
     }
 
