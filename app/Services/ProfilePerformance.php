@@ -85,12 +85,12 @@ class ProfilePerformance
             // Get the project if not loaded already
             if (!array_key_exists($task->project_id, $loadedProjects)) {
                 if ($task['collection'] === 'tasks') {
-                    GenericModel::setCollection('projects');
+                    $loadedProjects[$task->project_id] = GenericModel::whereTo('projects')
+                        ->find($task->project_id);
                 } else {
-                    GenericModel::setCollection('projects_archived');
+                    $loadedProjects[$task->project_id] = GenericModel::whereTo('projects_archived')
+                        ->find($task->project_id);
                 }
-
-                $loadedProjects[$task->project_id] = GenericModel::find($task->project_id);
             }
 
             $project = $loadedProjects[$task->project_id];
@@ -621,7 +621,8 @@ class ProfilePerformance
     {
         GenericModel::setCollection($collection);
 
-        return GenericModel::where('owner', '=', $profile->id)
+        return GenericModel::whereTo($collection)
+            ->where('owner', '=', $profile->id)
             ->where('passed_qa', '=', $passedQa)
             ->where('timeAssigned', '>=', $unixStart)
             ->where('timeAssigned', '<=', $unixEnd)
