@@ -15,7 +15,7 @@ namespace {
         public function up()
         {
             //get all validations
-            $validations = GenericModel::allModels('validations');
+            $validations = GenericModel::whereTo('validations')->all();
 
             $validationRules = [];
 
@@ -28,7 +28,7 @@ namespace {
 
             //loop through all db records for each validation resource
             foreach ($validationRules as $resource => $fields) {
-                $collectionRecords = GenericModel::allModels($resource);
+                $collectionRecords = GenericModel::whereTo($resource)->all();
                 foreach ($collectionRecords as $record) {
                     $singleRecordRules = $validationRules[$resource];
                     $checkRecordFields = array_intersect_key($record->getAttributes(), $fields);

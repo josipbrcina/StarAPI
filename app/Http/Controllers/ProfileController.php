@@ -80,8 +80,7 @@ class ProfileController extends Controller
      */
     public function getPerformancePerTask(Request $request)
     {
-        GenericModel::setCollection('tasks');
-        $task = GenericModel::find($request->route('taskId'));
+        $task = GenericModel::whereTo('tasks')->find($request->route('taskId'));
 
         if (!$task) {
             return $this->jsonError(
@@ -101,9 +100,8 @@ class ProfileController extends Controller
      */
     public function getFeedback(Request $request)
     {
-        GenericModel::setCollection('feedbacks');
-
-        $feedback = GenericModel::where('userId', '=', $request->route('id'))
+        $feedback = GenericModel::whereTo('feedbacks')
+            ->where('userId', '=', $request->route('id'))
             ->get();
 
         // Check if collection has got any models returned
@@ -235,7 +233,8 @@ class ProfileController extends Controller
         }
 
         // Update account model
-        $account = GenericModel::findModel($authenticatedUser->_id, 'accounts', 'accounts');
+        $account = GenericModel::whereTo('accounts', 'accounts')
+            ->find($authenticatedUser->_id);
         $applicationsArray = $account->applications;
         $applicationsArray[] = $request->route('appName');
         $account->applications = $applicationsArray;
@@ -319,7 +318,7 @@ class ProfileController extends Controller
             return $this->jsonError(['Profile ID not found.'], 404);
         }
 
-        $model = GenericModel::findModel($request->route('id'), 'vacations');
+        $model = GenericModel::whereTo('vacations')->find($request->route('id'));
         if ($model) {
             return $this->jsonError(['Method not allowed. Model already exists.'], 403);
         }
@@ -420,7 +419,8 @@ class ProfileController extends Controller
         $profile->save();
 
         // Update account model
-        $account = GenericModel::findModel($authenticatedUser->_id, 'accounts', 'accounts');
+        $account = GenericModel::whereTo('accounts', 'accounts')
+            ->find($authenticatedUser->_id);
         $applicationsArray = $account->applications;
         $applicationsArray = array_diff($applicationsArray, [$request->route('appName')]);
         $account->applications = $applicationsArray;
@@ -485,7 +485,8 @@ class ProfileController extends Controller
         MailSend::send($view, $data, $profileToSave, $subject);
 
         // Update account model
-        $account = GenericModel::findModel($authenticatedUser->_id, 'accounts', 'accounts');
+        $account = GenericModel::whereTo('accounts', 'accounts')
+            ->find($authenticatedUser->_id);
         $applicationsArray = $account->applications;
         $applicationsArray[] = $requestedAppName;
         $account->applications = $applicationsArray;

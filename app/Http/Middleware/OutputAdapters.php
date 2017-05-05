@@ -68,8 +68,9 @@ class OutputAdapters
     private function getAdapterConfig($resource)
     {
         $preSetCollection = GenericModel::getCollection();
-        GenericModel::setCollection('adapter-rules');
-        $out = GenericModel::where('resource', '=', $resource)->first();
+        $out = GenericModel::whereTo('adapter-rules')
+            ->where('resource', '=', $resource)
+            ->first();
         GenericModel::setCollection($preSetCollection);
 
         return $out;

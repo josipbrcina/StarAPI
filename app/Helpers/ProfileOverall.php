@@ -18,7 +18,7 @@ class ProfileOverall
      */
     public static function getProfileOverallRecord(Profile $profile)
     {
-        $profileOverallRecord = GenericModel::findModel($profile->id, 'profile_overall');
+        $profileOverallRecord = GenericModel::whereTo('profile_overall')->find($profile->id);
         if (!$profileOverallRecord) {
             $profileOverallRecord = new GenericModel([
                 'totalEarned' => 0,

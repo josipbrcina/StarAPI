@@ -48,7 +48,6 @@ class TaskUpdateXP
 
             $taskOwnerProfile = Profile::find($profileId);
 
-            GenericModel::setCollection('tasks');
             $mappedValues = $profilePerformance->getTaskValuesForProfile($taskOwnerProfile, $task);
 
             $webDomain = Config::get('sharedSettings.internalConfiguration.webDomain');
@@ -106,7 +105,7 @@ class TaskUpdateXP
             }
 
             // Get project owner id
-            $project = GenericModel::findModel($task->project_id, 'projects');
+            $project = GenericModel::whereTo('projects')->find($task->project_id);
             $projectOwner = null;
             if ($project) {
                 $projectOwner = Profile::find($project->acceptedBy);
@@ -144,7 +143,7 @@ class TaskUpdateXP
             $profileXp->saveModel('xp');
             $profile->xp_id = $profileXp->_id;
         } else {
-            $profileXp = GenericModel::findModel($profile->xp_id, 'xp');
+            $profileXp = GenericModel::whereTo('xp')->find($profile->xp_id);
         }
 
         return $profileXp;

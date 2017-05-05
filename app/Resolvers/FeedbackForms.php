@@ -16,13 +16,9 @@ class FeedbackForms
      */
     public static function getForms()
     {
-        $preSetCollection = GenericModel::getCollection();
-        GenericModel::setCollection('feedback-forms');
-
-        $formFields = GenericModel::first();
+        $formFields = GenericModel::whereTo('feedback-forms')
+            ->first();
         $resolved = $formFields->getAttribute('fields');
-
-        GenericModel::setCollection($preSetCollection);
 
         return $resolved;
     }

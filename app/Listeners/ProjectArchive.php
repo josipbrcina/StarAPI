@@ -16,10 +16,12 @@ class ProjectArchive
 
         //check if project is archived or unArchived to get all sprints from proper collection
         $project['collection'] === 'projects_archived' ?
-            GenericModel::setCollection('sprints')
-            : GenericModel::setCollection('sprints_archived');
-
-        $projectSprints = GenericModel::where('project_id', '=', $project->id)->get();
+            $projectSprints = GenericModel::whereTo('sprints')
+                ->where('project_id', '=', $project->id)
+                ->get()
+            : $projectSprints = GenericModel::whereTo('sprints_archived')
+            ->where('project_id', '=', $project->id)
+            ->get();
 
         //archive or unArchive project sprints
         foreach ($projectSprints as $sprint) {
@@ -28,10 +30,12 @@ class ProjectArchive
 
         //check if project is archived or unArchived to get all tasks from proper collection
         $project['collection'] === 'projects_archived' ?
-            GenericModel::setCollection('tasks')
-            : GenericModel::setCollection('tasks_archived');
-
-        $projectTasks = GenericModel::where('project_id', '=', $project->id)->get();
+            $projectTasks = GenericModel::whereTo('tasks')
+                ->where('project_id', '=', $project->id)
+                ->get()
+            : $projectTasks = GenericModel::whereTo('tasks_archived')
+            ->where('project_id', '=', $project->id)
+            ->get();
 
         //archive or unArchive project tasks
         foreach ($projectTasks as $task) {

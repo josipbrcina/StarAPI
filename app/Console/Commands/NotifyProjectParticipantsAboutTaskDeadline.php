@@ -47,8 +47,8 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
         $unixSevenDaysFromNow = (int)Carbon::now()->addDays(7)->endOfDay()->format('U');
 
         // Get all unfinished tasks with due_date between yesterday and next 7 days
-        GenericModel::setCollection('tasks');
-        $tasks = GenericModel::where('due_date', '<=', $unixSevenDaysFromNow)
+        $tasks = GenericModel::whereTo('tasks')
+            ->where('due_date', '<=', $unixSevenDaysFromNow)
             ->where('due_date', '>=', $unixYesterday)
             ->where('ready', '=', true)
             ->where('passed_qa', '=', false)
@@ -60,7 +60,7 @@ class NotifyProjectParticipantsAboutTaskDeadline extends Command
 
         foreach ($tasks as $task) {
             if (!array_key_exists($task->project_id, $projects)) {
-                $project = GenericModel::findModel($task->project_id, 'projects');
+                $project = GenericModel::whereTo('projects')->find($task->project_id);
                 if ($project) {
                     $projects[$project->_id] = $project;
                 }

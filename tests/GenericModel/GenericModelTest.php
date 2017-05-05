@@ -21,9 +21,9 @@ class GenericModelTest extends TestCase
         $projectId = $project->id;
         $project->archive();
 
-        $oldProject = GenericModel::findModel($projectId, 'projects');
+        $oldProject = GenericModel::whereTo('projects')->find($projectId);
 
-        $foundArchivedProject = GenericModel::findModel($projectId, 'projects_archived');
+        $foundArchivedProject = GenericModel::whereTo('projects_archived')->find($projectId);
 
         $this->assertEquals($projectId, $foundArchivedProject->id);
         $this->assertEquals(null, $oldProject);
@@ -53,9 +53,9 @@ class GenericModelTest extends TestCase
 
         $project->unArchive();
 
-        $archivedProject = GenericModel::findModel($archivedProjectId, 'projects_archived');
+        $archivedProject = GenericModel::whereTo('projects_archived')->find($archivedProjectId);
 
-        $foundProject = GenericModel::findModel($archivedProjectId, 'projects');
+        $foundProject = GenericModel::whereTo('projects')->find($archivedProjectId);
 
         $this->assertEquals($archivedProjectId, $foundProject->id);
         $this->assertEquals(null, $archivedProject);
@@ -84,9 +84,9 @@ class GenericModelTest extends TestCase
         $projectId = $project->id;
         $project->delete();
 
-        $oldProject = GenericModel::findModel($projectId, 'projects');
+        $oldProject = GenericModel::whereTo('projects')->find($projectId);
 
-        $foundDeletedProject = GenericModel::findModel($projectId, 'projects_deleted');
+        $foundDeletedProject = GenericModel::whereTo('projects_deleted')->find($projectId);
 
         $this->assertEquals($projectId, $foundDeletedProject->id);
         $this->assertEquals(null, $oldProject);
@@ -116,9 +116,9 @@ class GenericModelTest extends TestCase
 
         $project->restore();
 
-        $deletedProject = GenericModel::findModel($deletedProjectId, 'projects_deleted');
+        $deletedProject = GenericModel::whereTo('projects_deleted')->find($deletedProjectId);
 
-        $foundRestoredProject = GenericModel::findModel($deletedProjectId, 'projects');
+        $foundRestoredProject = GenericModel::whereTo('projects')->find($deletedProjectId);
 
         $this->assertEquals($deletedProjectId, $foundRestoredProject->id);
         $this->assertEquals(null, $deletedProject);

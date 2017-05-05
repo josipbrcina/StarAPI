@@ -93,7 +93,7 @@ class JwtAuth extends BaseMiddleware
             }
 
 
-            if (GenericModel::findModel($userCheck->_id, 'profiles') === null) {
+            if (GenericModel::whereTo('profiles')->find($userCheck->_id) === null) {
                 return $this->respond('tymon.jwt.absent', ['Profile does not exist for this application.'], 403);
             }
         }

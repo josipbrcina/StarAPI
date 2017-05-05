@@ -48,7 +48,8 @@ class UpdateTaskPriority extends Command
      */
     public function handle()
     {
-        $tasks = GenericModel::allModels('tasks');
+        $tasks = GenericModel::whereTo('tasks')
+            ->all();
 
         $unixTimeNow = Carbon::now()->format('U');
         $unixTime7Days = Carbon::now()->addDays(7)->format('U');
@@ -92,14 +93,16 @@ class UpdateTaskPriority extends Command
 
         // Get all tasks projects and project owner IDs
         foreach ($tasksBumpedPerProject as $projectId => $count) {
-            $project = GenericModel::findModel($projectId, 'projects');
+            $project = GenericModel::whereTo('projects')
+                ->find($projectId);
             $projects[$projectId] = $project;
             if ($project->acceptedBy) {
                 $projectOwnerIds[] = $project->acceptedBy;
             }
         }
 
-        $recipients = GenericModel::allModels('profiles');
+        $recipients = GenericModel::whereTo('profiles')
+            ->all();
 
         // send slack notification to all admins and POs about task priority change
         foreach ($recipients as $recipient) {

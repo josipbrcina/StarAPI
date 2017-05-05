@@ -192,41 +192,6 @@ class GenericModel extends StarModel
     }
 
     /**
-     * Find model by id, we can also set collectionName and databaseName
-     * @param $id
-     * @param null $collection
-     * @param null $databaseName
-     * @return mixed
-     */
-    public static function findModel($id, $collection = null, $databaseName = null)
-    {
-        $databaseToReconnect = null;
-        $preSetCollection = null;
-
-        if ($collection !== null) {
-            $preSetCollection = self::getCollection();
-            self::setCollection($collection);
-        }
-
-        if ($databaseName !== null) {
-            $databaseToReconnect = Config::get('database.connections.' . Config::get('database.default') . '.database');
-            self::setDatabaseConnection($databaseName);
-        }
-
-        $result = GenericModel::where('_id', $id)->first();
-
-        if ($databaseName !== null) {
-            self::setDatabaseConnection($databaseToReconnect);
-        }
-
-        if ($collection !== null) {
-            self::setCollection($preSetCollection);
-        }
-
-        return $result;
-    }
-
-    /**
      * Save model to specific collection and database
      * @param null $collection
      * @param null $databaseName
@@ -296,38 +261,24 @@ class GenericModel extends StarModel
     }
 
     /**
-     * Get all models from specific collection and specific database
+     * Set collection and database name for query
      * @param null $collection
      * @param null $databaseName
-     * @return \Illuminate\Database\Eloquent\Collection|static[]
+     * @return static
      */
-    public static function allModels($collection = null, $databaseName = null)
+    public static function whereTo($collection = null, $databaseName = null)
     {
-        $databaseToReconnect = null;
-        $preSetCollection = null;
-
         if ($collection !== null) {
-            $preSetCollection = self::getCollection();
             self::setCollection($collection);
         }
 
         if ($databaseName !== null) {
-            $databaseToReconnect = Config::get('database.connections.' . Config::get('database.default') . '.database');
             self::setDatabaseConnection($databaseName);
         }
 
-        $returnedModels = parent::all();
-
-        if ($databaseName !== null) {
-            self::setDatabaseConnection($databaseToReconnect);
-        }
-
-        if ($collection !== null) {
-            self::setCollection($preSetCollection);
-        }
-
-        return $returnedModels;
+        return new static();
     }
+
 
     /**
      * Set database connection so we can modify model to specific database

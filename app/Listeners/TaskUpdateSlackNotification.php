@@ -22,9 +22,9 @@ class TaskUpdateSlackNotification
         $user = AuthHelper::getAuthenticatedUser();
         $task = $event->model;
 
-        $project = GenericModel::findModel($task->project_id, 'projects');
-        $projectOwner = GenericModel::findModel($project->acceptedBy, 'profiles');
-        $taskOwner = GenericModel::findModel($task->owner, 'profiles');
+        $project = GenericModel::whereTo('projects')->find($task->project_id);
+        $projectOwner = GenericModel::whereTo('profiles')->find($project->acceptedBy);
+        $taskOwner = GenericModel::whereTo('profiles')->find($task->owner);
 
         // Let's build a list of recipients
         $recipients = [];
@@ -34,7 +34,7 @@ class TaskUpdateSlackNotification
         }
 
         foreach ($task->watchers as $watcher) {
-            $watcherProfile = GenericModel::findModel($watcher, 'profiles');
+            $watcherProfile = GenericModel::whereTo('profiles')->find($watcher);
             if ($watcherProfile !== null && $watcherProfile->slack) {
                 $recipients[] = '@' . $watcherProfile->slack;
             }

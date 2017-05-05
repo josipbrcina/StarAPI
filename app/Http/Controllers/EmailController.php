@@ -79,7 +79,7 @@ class EmailController extends Controller
 
         if (is_array($to)) {
             foreach ($to as $t) {
-                $profile = GenericModel::findModel($t, 'profiles');
+                $profile = GenericModel::whereTo('profiles')->find($t);
                 if ($profile !== null) {
                     $recipients[] = $profile;
                 }

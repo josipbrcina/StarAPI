@@ -12,7 +12,10 @@ trait DynamicListener
         $app = App::getFacadeRoot();
         $dispatcher = $app->events;
 
-        $listenerRules = GenericModel::allModels('listener-rules');
+        $presetCollection = GenericModel::getCollection();
+
+        $listenerRules = GenericModel::whereTo('listener-rules')
+            ->all();
 
         $eventsListeners = [];
 

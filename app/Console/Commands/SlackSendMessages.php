@@ -35,9 +35,6 @@ class SlackSendMessages extends Command
         // Load configuration
         $priorityMapping = Config::get('sharedSettings.internalConfiguration.slack.priorityToMinutesDelay');
 
-        $oldCollection = GenericModel::getCollection();
-        GenericModel::setCollection('slackMessages');
-
         $sent = [];
 
         $now = new \DateTime();
@@ -47,7 +44,8 @@ class SlackSendMessages extends Command
 
         // Load by priority
         foreach ($priorityMapping as $priority => $minutesDelay) {
-            $query = GenericModel::query();
+            $query = GenericModel::whereTo('slackMessages')
+            ->query();
             // Find messages in required priority
             $query->where('priority', '=', $priority)
                 // Make sure we don't re-send things
@@ -64,8 +62,6 @@ class SlackSendMessages extends Command
                 $sent[] = $message->recipient;
             }
         }
-
-        GenericModel::setCollection($oldCollection);
 
         return $sent;
     }

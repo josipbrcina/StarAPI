@@ -14,7 +14,7 @@ namespace {
          */
         public function up()
         {
-            $tasks = GenericModel::allModels('tasks');
+            $tasks = GenericModel::whereTo('tasks')->all();
             foreach ($tasks as $task) {
                 if (empty($task->priority)) {
                     $task->update([

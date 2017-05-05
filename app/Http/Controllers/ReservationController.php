@@ -28,7 +28,8 @@ class ReservationController extends Controller
      */
     public function makeProjectReservation(Request $request)
     {
-        $project = GenericModel::findModel($request->route('id'), 'projects');
+        $project = GenericModel::whereTo('projects')
+            ->find($request->route('id'));
 
         $errors = [];
         $time = (new \DateTime())->getTimestamp();
@@ -55,7 +56,8 @@ class ReservationController extends Controller
      */
     public function acceptProject(Request $request)
     {
-        $project = GenericModel::findModel($request->route('id'), 'projects');
+        $project = GenericModel::whereTo('projects')
+            ->find($request->route('id'));
 
         $errors = [];
         $time = (new \DateTime())->getTimestamp();
@@ -80,7 +82,8 @@ class ReservationController extends Controller
      */
     public function declineProject(Request $request)
     {
-        $project = GenericModel::findModel($request->route('id'), 'projects');
+        $project = GenericModel::whereTo('projects')
+            ->find($request->route('id'));
 
         $errors = [];
         $time = (new \DateTime())->getTimestamp();
@@ -106,7 +109,7 @@ class ReservationController extends Controller
      */
     public function makeTaskReservation(Request $request)
     {
-        $task = GenericModel::findModel($request->route('id'), 'tasks');
+        $task = GenericModel::whereTo('tasks')->find($request->route('id'));
 
         $errors = [];
         $time = (new \DateTime())->getTimestamp();
@@ -137,7 +140,7 @@ class ReservationController extends Controller
      */
     public function acceptTask(Request $request)
     {
-        $task = GenericModel::findModel($request->route('id'), 'tasks');
+        $task = GenericModel::whereTo('tasks')->find($request->route('id'));
 
         $errors = [];
         $time = (new \DateTime())->getTimestamp();
@@ -166,7 +169,7 @@ class ReservationController extends Controller
      */
     public function declineTask(Request $request)
     {
-        $task = GenericModel::findModel($request->route('id'), 'tasks');
+        $task = GenericModel::whereTo('tasks')->find($request->route('id'));
 
         $errors = [];
         $time = (new \DateTime())->getTimestamp();

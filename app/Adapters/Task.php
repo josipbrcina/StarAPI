@@ -50,7 +50,7 @@ class Task implements AdaptersInterface
 
         // If task is not claimed (no owner) check if user is admin, Po or is task currently reserved by user
         if (empty($this->task->owner)) {
-            $project = GenericModel::findModel($this->task->project_id, 'projects');
+            $project = GenericModel::whereTo('projects')->find($this->task->project_id);
             if ($profile->admin || $profile->id === $project->acceptedBy) {
                 $taskViewPermission = true;
             } elseif (isset($this->task->reservationsBy)) {
@@ -104,6 +104,7 @@ class Task implements AdaptersInterface
         $this->task->xp = (float)sprintf('%.2f', $this->task->xp);
         $this->task->payout = (float)sprintf('%.2f', $mappedValues['payout']);
 
+        GenericModel::setCollection('tasks');
         $taskStatus = $profilePerformance->perTask($this->task);
 
         // Set due dates so we can check them and generate colorIndicator

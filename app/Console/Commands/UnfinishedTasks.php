@@ -36,21 +36,24 @@ class UnfinishedTasks extends Command
     public function handle()
     {
         // Get all projects
-        $projects = GenericModel::allModels('projects');
+        $projects = GenericModel::whereTo('projects')
+            ->all();
 
         // Get all admin users
-        GenericModel::setCollection('profiles');
-        $admins = GenericModel::where('admin', '=', true)->get();
+        $admins = GenericModel::whereTo('profiles')
+            ->where('admin', '=', true)
+            ->get();
 
         $activeProjects = [];
         $sprints = [];
 
         // Get all active projects and project sprints
-        GenericModel::setCollection('sprints');
         foreach ($projects as $project) {
             if (!empty($project->acceptedBy) && $project->isComplete !== true) {
                 $activeProjects[$project->id] = $project;
-                $projectSprints = GenericModel::where('project_id', '=', $project->id)->get();
+                $projectSprints = GenericModel::whereTo('sprints')
+                    ->where('project_id', '=', $project->id)
+                    ->get();
                 foreach ($projectSprints as $projectSprint) {
                     $sprints[$projectSprint->id] = $projectSprint;
                 }
@@ -66,7 +69,6 @@ class UnfinishedTasks extends Command
         $checkDay = Carbon::now()->format('Y-m-d');
 
         // Get all unfinished tasks from ended sprints and get all future sprints on project
-        GenericModel::setCollection('tasks');
         foreach ($sprints as $sprint) {
             $sprintStartDueDate =
                 Carbon::createFromFormat('U', InputHandler::getUnixTimestamp($sprint->start))->format('Y-m-d');
@@ -76,7 +78,9 @@ class UnfinishedTasks extends Command
                 $endedSprints[$sprint->project_id][] = $sprint;
 
                 // Get all tasks and check if there are unfinished tasks
-                $sprintTasks = GenericModel::where('sprint_id', '=', $sprint->id)->get();
+                $sprintTasks = GenericModel::whereTo('tasks')
+                    ->where('sprint_id', '=', $sprint->id)
+                    ->get();
                 foreach ($sprintTasks as $task) {
                     if ($task->passed_qa !== true) {
                         $sprintEndedTasks[$task->id] = $task;

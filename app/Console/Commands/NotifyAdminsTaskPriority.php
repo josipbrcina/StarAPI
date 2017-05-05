@@ -48,12 +48,10 @@ class NotifyAdminsTaskPriority extends Command
      */
     public function handle()
     {
-        $preSetCollection = GenericModel::getCollection();
-        GenericModel::setCollection('tasks');
-
         // Get all tasks with due_date within next 28 days
         $unixTime28Days = (int) Carbon::now()->addDays(28)->format('U');
-        $tasks = GenericModel::where('due_date', '<=', $unixTime28Days)
+        $tasks = GenericModel::whereTo('tasks')
+            ->where('due_date', '<=', $unixTime28Days)
             ->get();
 
         $unixTime2Days = (int) Carbon::now()->addDays(2)->format('U');
@@ -102,7 +100,7 @@ class NotifyAdminsTaskPriority extends Command
 
         // Get all tasks projects and project owner IDs
         foreach ($tasksDueDates as $projectId => $taskCount) {
-            $project = GenericModel::findModel($projectId, 'projects');
+            $project = GenericModel::whereTo('projects')->find($projectId);
             $projects[$projectId] = $project;
             if ($project->acceptedBy) {
                 $projectOwnerIds[] = $project->acceptedBy;
@@ -146,8 +144,6 @@ class NotifyAdminsTaskPriority extends Command
                 }
             }
         }
-
-        GenericModel::setCollection($preSetCollection);
     }
 
     /**

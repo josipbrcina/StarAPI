@@ -71,8 +71,8 @@ class TaskBlockedNotifyProjectOwnerTest extends TestCase
 
         // Get message from slackMessages collection
         $recipient = '@' . $this->profile->slack;
-        GenericModel::setCollection('slackMessages');
-        $messageRecord = GenericModel::where('recipient', '=', $recipient)
+        $messageRecord = GenericModel::whereTo('slackMessages')
+            ->where('recipient', '=', $recipient)
             ->orderBy('_id', 'desc')
             ->first();
 

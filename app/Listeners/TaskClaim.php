@@ -19,13 +19,12 @@ class TaskClaim
         $task = $event->model;
 
         if ($task->isDirty()) {
-            $preSetCollection = GenericModel::getCollection();
             $updatedFields = $task->getDirty();
             if ($task['collection'] === 'tasks'
                 && (key_exists('owner', $updatedFields) || key_exists('reservationsBy', $updatedFields))
             ) {
-                GenericModel::setCollection('tasks');
-                $allTasks = GenericModel::where('_id', '!=', $task->_id)
+                $allTasks = GenericModel::whereTo('tasks')
+                    ->where('_id', '!=', $task->_id)
                     ->get();
                 $taskReservationTime =
                     Config::get('sharedSettings.internalConfiguration.tasks.reservation.maxReservationTime');
@@ -40,7 +39,8 @@ class TaskClaim
                     $taskOwnerId = $updatedFields['reservationsBy'][0]['user_id'];
                 }
                 // Check if user is a member of project that task belongs to
-                $project = GenericModel::findModel($task->project_id, 'projects');
+                $project = GenericModel::whereTo('projects')
+                    ->find($task->project_id);
 
                 if (!in_array($taskOwnerId, $project->members)) {
                     throw new UserInputException('Permission denied. Not a member of project.', 403);
@@ -68,8 +68,6 @@ class TaskClaim
                     }
                 }
             }
-
-            GenericModel::setCollection($preSetCollection);
 
             return true;
         }

@@ -16,10 +16,12 @@ class ProjectDelete
 
         //check if project is deleted or restored to get all sprints from proper collection
         $project['collection'] === 'projects_deleted' ?
-            GenericModel::setCollection('sprints')
-            : GenericModel::setCollection('sprints_deleted');
-
-        $projectSprints = GenericModel::where('project_id', '=', $project->id)->get();
+            $projectSprints = GenericModel::whereTo('sprints')
+                ->where('project_id', '=', $project->id)
+                ->get()
+            : $projectSprints = GenericModel::whereTo('sprints_deleted')
+            ->where('project_id', '=', $project->id)
+            ->get();
 
         //delete or restore project sprints
         foreach ($projectSprints as $sprint) {
@@ -28,10 +30,12 @@ class ProjectDelete
 
         //check if project is deleted or restored to get all tasks from proper collection
         $project['collection'] === 'projects_deleted' ?
-            GenericModel::setCollection('tasks')
-            : GenericModel::setCollection('tasks_deleted');
-
-        $projectTasks = GenericModel::where('project_id', '=', $project->id)->get();
+            $projectTasks = GenericModel::whereTo('tasks')
+                ->where('project_id', '=', $project->id)
+                ->get()
+            : $projectTasks = GenericModel::whereTo('tasks_deleted')
+            ->where('project_id', '=', $project->id)
+            ->get();
 
         //delete or restore project tasks
         foreach ($projectTasks as $task) {

@@ -62,13 +62,14 @@ class FileUploadController extends Controller
      */
     public function getProjectUploads(Request $request)
     {
-        $project = GenericModel::findModel($request->route('id'), 'projects');
+        $project = GenericModel::whereTo('projects')->find($request->route('id'));
         if (!$project) {
             return $this->jsonError(['Project with given ID not found'], 404);
         }
 
-        GenericModel::setCollection('uploads');
-        $uploads = GenericModel::where('projectId', '=', $request->route('id'))->get();
+        $uploads = GenericModel::whereTo('uploads')
+            ->where('projectId', '=', $request->route('id'))
+            ->get();
 
         return $this->jsonSuccess($uploads);
     }
@@ -82,13 +83,14 @@ class FileUploadController extends Controller
      */
     public function deleteProjectUploads(Request $request)
     {
-        $project = GenericModel::findModel($request->route('projectId'), 'projects');
+        $project = GenericModel::whereTo('projects')->find($request->route('projectId'));
         if (!$project) {
             return $this->jsonError(['Project with given ID not found'], 404);
         }
 
-        GenericModel::setCollection('uploads');
-        $uploads = GenericModel::where('projectId', '=', $request->route('projectId'))->get();
+        $uploads = GenericModel::whereTo('uploads')
+            ->where('projectId', '=', $request->route('projectId'))
+            ->get();
 
         foreach ($uploads as $upload) {
             $upload->delete();

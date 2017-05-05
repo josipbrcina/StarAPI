@@ -73,7 +73,8 @@ class GenericModelHistory
             $modelHistoryRecord->saveModel('document-history');
             $model->history_id = $modelHistoryRecord->_id;
         } else {
-            $modelHistoryRecord = GenericModel::findModel($model->history_id, 'document-history');
+            $modelHistoryRecord = GenericModel::whereTo('document-history')
+                ->find($model->history_id);
         }
 
         return $modelHistoryRecord;
