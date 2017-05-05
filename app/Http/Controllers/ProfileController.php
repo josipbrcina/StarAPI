@@ -175,8 +175,6 @@ class ProfileController extends Controller
         }
 
         // After all validations let's save model to feedbacks collection
-        GenericModel::setCollection('feedbacks');
-
         $feedback = new GenericModel(
             [
                 'userId' => $request->route('id'),
@@ -185,7 +183,7 @@ class ProfileController extends Controller
             ]
         );
 
-        if ($feedback->save()) {
+        if ($feedback->saveModel('feedbacks')) {
             return $this->jsonSuccess($feedback);
         }
 
@@ -236,20 +234,12 @@ class ProfileController extends Controller
             MailSend::send($view, $data, $profileToSave, $subject);
         }
 
-        // Connect to account database
-        $applicationName = $request->route('appName');
-        AuthHelper::setDatabaseConnection();
-
         // Update account model
-        GenericModel::setCollection('accounts');
-        $account = GenericModel::find($authenticatedUser->_id);
+        $account = GenericModel::findModel($authenticatedUser->_id, 'accounts', 'accounts');
         $applicationsArray = $account->applications;
-        $applicationsArray[] = $applicationName;
+        $applicationsArray[] = $request->route('appName');
         $account->applications = $applicationsArray;
-        $account->save();
-
-        // Connect back to application database
-        AuthHelper::setDatabaseConnection($applicationName);
+        $account->saveModel('accounts', 'accounts');
 
         return $this->jsonSuccess($profileToSave);
     }
@@ -324,15 +314,12 @@ class ProfileController extends Controller
      */
     public function vacation(Request $request)
     {
-        $oldCollection = GenericModel::getCollection();
-        GenericModel::setCollection('vacations');
-
         $profile = Profile::find($request->route('id'));
         if (!$profile) {
             return $this->jsonError(['Profile ID not found.'], 404);
         }
 
-        $model = GenericModel::find($request->route('id'));
+        $model = GenericModel::findModel($request->route('id'), 'vacations');
         if ($model) {
             return $this->jsonError(['Method not allowed. Model already exists.'], 403);
         }
@@ -403,8 +390,7 @@ class ProfileController extends Controller
         $model = new GenericModel($fields);
         $model->_id = $profile->_id;
 
-        if ($model->save()) {
-            GenericModel::setCollection($oldCollection);
+        if ($model->saveModel('vacations')) {
             return $model;
         }
 
@@ -433,20 +419,12 @@ class ProfileController extends Controller
         $profile->accountActive = false;
         $profile->save();
 
-        // Connect to account database
-        $applicationName = $request->route('appName');
-        AuthHelper::setDatabaseConnection();
-
         // Update account model
-        GenericModel::setCollection('accounts');
-        $account = GenericModel::find($authenticatedUser->_id);
+        $account = GenericModel::findModel($authenticatedUser->_id, 'accounts', 'accounts');
         $applicationsArray = $account->applications;
-        $applicationsArray = array_diff($applicationsArray, [$applicationName]);
+        $applicationsArray = array_diff($applicationsArray, [$request->route('appName')]);
         $account->applications = $applicationsArray;
-        $account->save();
-
-        // Connect back to application database
-        AuthHelper::setDatabaseConnection($applicationName);
+        $account->saveModel('accounts', 'accounts');
 
         return $this->jsonSuccess('You have successfully left application.');
     }
@@ -506,19 +484,12 @@ class ProfileController extends Controller
 
         MailSend::send($view, $data, $profileToSave, $subject);
 
-        // Connect to account database
-        AuthHelper::setDatabaseConnection();
-
         // Update account model
-        GenericModel::setCollection('accounts');
-        $account = GenericModel::find($authenticatedUser->_id);
+        $account = GenericModel::findModel($authenticatedUser->_id, 'accounts', 'accounts');
         $applicationsArray = $account->applications;
         $applicationsArray[] = $requestedAppName;
         $account->applications = $applicationsArray;
-        $account->save();
-
-        // Connect back to application database
-        AuthHelper::setDatabaseConnection($requestedAppName);
+        $account->saveModel('accounts', 'accounts');
 
         return $this->jsonSuccess('Successfully created new application.');
     }

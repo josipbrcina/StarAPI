@@ -68,16 +68,13 @@ class GenericModelHistory
      */
     private function getHistoryRecord(GenericModel $model)
     {
-        $oldCollection = GenericModel::getCollection();
-        GenericModel::setCollection('document-history');
         if (!$model->history_id) {
             $modelHistoryRecord = new GenericModel(['history' => []]);
-            $modelHistoryRecord->save();
+            $modelHistoryRecord->saveModel('document-history');
             $model->history_id = $modelHistoryRecord->_id;
         } else {
-            $modelHistoryRecord = GenericModel::find($model->history_id);
+            $modelHistoryRecord = GenericModel::findModel($model->history_id, 'document-history');
         }
-        GenericModel::setCollection($oldCollection);
 
         return $modelHistoryRecord;
     }

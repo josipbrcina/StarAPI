@@ -14,14 +14,9 @@ trait ProfileRelated
      */
     public function getXpRecord()
     {
-        $oldCollection = GenericModel::getCollection();
-        GenericModel::setCollection('xp');
-
         $profileXp = new GenericModel(['records' => []]);
-        $profileXp->save();
+        $profileXp->saveModel('xp');
         $this->profile->xp_id = $profileXp->_id;
-
-        GenericModel::setCollection($oldCollection);
 
         return $profileXp;
     }

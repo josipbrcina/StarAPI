@@ -33,8 +33,7 @@ class FileUploadController extends Controller
                 throw new FileUploadException('File could not be uploaded.');
             }
 
-            GenericModel::setCollection('uploads');
-            $upload = GenericModel::create();
+            $upload = GenericModel::createModel([], 'uploads');
 
             $fileName = $userId . '-' . str_random(20) . '.' . $file->getClientOriginalExtension();
 
@@ -63,8 +62,7 @@ class FileUploadController extends Controller
      */
     public function getProjectUploads(Request $request)
     {
-        GenericModel::setCollection('projects');
-        $project = GenericModel::find($request->route('id'));
+        $project = GenericModel::findModel($request->route('id'), 'projects');
         if (!$project) {
             return $this->jsonError(['Project with given ID not found'], 404);
         }
@@ -84,8 +82,7 @@ class FileUploadController extends Controller
      */
     public function deleteProjectUploads(Request $request)
     {
-        GenericModel::setCollection('projects');
-        $project = GenericModel::find($request->route('projectId'));
+        $project = GenericModel::findModel($request->route('projectId'), 'projects');
         if (!$project) {
             return $this->jsonError(['Project with given ID not found'], 404);
         }

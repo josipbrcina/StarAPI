@@ -32,16 +32,13 @@ class Slack
         // Round to next interval (delay) based on priority
         $runAt = $unixNow - $unixNow % $secondsDelay + $secondsDelay;
 
-        $oldCollection = GenericModel::getCollection();
-        GenericModel::setCollection('slackMessages');
         $record = new GenericModel();
         $record->recipient = $recipient;
         $record->message = $message;
         $record->priority = $priority;
         $record->sent = false;
         $record->runAt = $runAt;
-        $record->save();
-        GenericModel::setCollection($oldCollection);
+        $record->saveModel('slackMessages');
 
         return $record;
     }

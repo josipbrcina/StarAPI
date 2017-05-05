@@ -50,11 +50,7 @@ class Task implements AdaptersInterface
 
         // If task is not claimed (no owner) check if user is admin, Po or is task currently reserved by user
         if (empty($this->task->owner)) {
-            $oldCollection = GenericModel::getCollection();
-            GenericModel::setCollection('projects');
-            $project = GenericModel::find($this->task->project_id);
-            GenericModel::setCollection($oldCollection);
-
+            $project = GenericModel::findModel($this->task->project_id, 'projects');
             if ($profile->admin || $profile->id === $project->acceptedBy) {
                 $taskViewPermission = true;
             } elseif (isset($this->task->reservationsBy)) {

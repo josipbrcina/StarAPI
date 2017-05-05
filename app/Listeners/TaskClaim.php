@@ -40,8 +40,7 @@ class TaskClaim
                     $taskOwnerId = $updatedFields['reservationsBy'][0]['user_id'];
                 }
                 // Check if user is a member of project that task belongs to
-                GenericModel::setCollection('projects');
-                $project = GenericModel::where('_id', '=', $task->project_id)->first();
+                $project = GenericModel::findModel($task->project_id, 'projects');
 
                 if (!in_array($taskOwnerId, $project->members)) {
                     throw new UserInputException('Permission denied. Not a member of project.', 403);

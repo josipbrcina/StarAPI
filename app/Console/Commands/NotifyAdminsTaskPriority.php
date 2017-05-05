@@ -101,10 +101,8 @@ class NotifyAdminsTaskPriority extends Command
         $projects = [];
 
         // Get all tasks projects and project owner IDs
-        GenericModel::setCollection('projects');
-
         foreach ($tasksDueDates as $projectId => $taskCount) {
-            $project = GenericModel::where('_id', '=', $projectId)->first();
+            $project = GenericModel::findModel($projectId, 'projects');
             $projects[$projectId] = $project;
             if ($project->acceptedBy) {
                 $projectOwnerIds[] = $project->acceptedBy;

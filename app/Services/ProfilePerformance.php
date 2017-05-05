@@ -86,8 +86,7 @@ class ProfilePerformance
 
             // Get the project if not loaded already
             if (!array_key_exists($task->project_id, $loadedProjects)) {
-                GenericModel::setCollection('projects');
-                $loadedProjects[$task->project_id] = GenericModel::find($task->project_id);
+                $loadedProjects[$task->project_id] = GenericModel::findModel($task->project_id, 'projects');
             }
 
             $project = $loadedProjects[$task->project_id];
@@ -112,10 +111,9 @@ class ProfilePerformance
 
         // Let's see the XP diff within time range
         if ($profile->xp_id) {
-            GenericModel::setCollection('xp');
             $unixStartDate = InputHandler::getUnixTimestamp($unixStart);
             $unixEndDate = InputHandler::getUnixTimestamp($unixEnd);
-            $xpRecord = GenericModel::find($profile->xp_id);
+            $xpRecord = GenericModel::findModel($profile->xp_id, 'xp');
             if ($xpRecord) {
                 foreach ($xpRecord->records as $record) {
                     $recordTimestamp = InputHandler::getUnixTimestamp($record['timestamp']);
@@ -507,9 +505,7 @@ class ProfilePerformance
         $workDays = WorkDays::getWorkDays($unixStart);
         $totalProfileWorkedDays = count($workDays);
 
-        $oldCollection = GenericModel::getCollection();
-        GenericModel::setCollection('vacations');
-        $vacations = GenericModel::find($profile->id);
+        $vacations = GenericModel::findModel($profile->id, 'vacations');
 
         if ($vacations) {
             foreach ($vacations->records as $record) {
@@ -522,8 +518,6 @@ class ProfilePerformance
                 }
             }
         }
-
-        GenericModel::setCollection($oldCollection);
 
         // Calculate minimum (percentage of base minimum)
         $calculatedMinimum = ($totalProfileWorkedDays / count($workDays)) * $baseMinimum;

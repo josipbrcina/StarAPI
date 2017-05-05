@@ -14,8 +14,7 @@ namespace {
          */
         public function up()
         {
-            GenericModel::setCollection('profiles');
-            $profiles = GenericModel::all();
+            $profiles = GenericModel::allModels('profiles');
             foreach ($profiles as $profile) {
                 if (empty($profile->role) && $profile->admin === true) {
                     $profile->update([

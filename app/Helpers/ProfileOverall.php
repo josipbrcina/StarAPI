@@ -18,9 +18,7 @@ class ProfileOverall
      */
     public static function getProfileOverallRecord(Profile $profile)
     {
-        $oldCollection = GenericModel::getCollection();
-        GenericModel::setCollection('profile_overall');
-        $profileOverallRecord = GenericModel::find($profile->id);
+        $profileOverallRecord = GenericModel::findModel($profile->id, 'profile_overall');
         if (!$profileOverallRecord) {
             $profileOverallRecord = new GenericModel([
                 'totalEarned' => 0,
@@ -28,9 +26,8 @@ class ProfileOverall
                 'profit' => 0
             ]);
             $profileOverallRecord->_id = $profile->id;
-            $profileOverallRecord->save();
+            $profileOverallRecord->saveModel('profile_overall');
         }
-        GenericModel::setCollection($oldCollection);
 
         return $profileOverallRecord;
     }

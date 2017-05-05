@@ -39,8 +39,7 @@ class XpDeduction extends Command
      */
     public function handle()
     {
-        GenericModel::setCollection('profiles');
-        $profiles = GenericModel::all();
+        $profiles = GenericModel::allModels('profiles');
 
         $profileHashMap = [];
         foreach ($profiles as $profile) {
@@ -90,14 +89,13 @@ class XpDeduction extends Command
                     if ($profile->xp - 1 == 0) {
                         $profile->banned = true;
                     }
-                    GenericModel::setCollection('xp');
 
                     if (!$profile->xp_id) {
                         $userXP = new GenericModel(['records' => []]);
-                        $userXP->save();
+                        $userXP->saveModel('xp');
                         $profile->xp_id = $userXP->_id;
                     } else {
-                        $userXP = GenericModel::find($profile->xp_id);
+                        $userXP = GenericModel::findModel($profile->xp_id, 'xp');
                     }
 
                     $records = $userXP->records;

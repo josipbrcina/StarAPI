@@ -48,10 +48,8 @@ class UpdateTaskPriority extends Command
      */
     public function handle()
     {
-        $preSetCollection = GenericModel::getCollection();
-        GenericModel::setCollection('tasks');
+        $tasks = GenericModel::allModels('tasks');
 
-        $tasks = GenericModel::all();
         $unixTimeNow = Carbon::now()->format('U');
         $unixTime7Days = Carbon::now()->addDays(7)->format('U');
         $unixTime14Days = Carbon::now()->addDays(14)->format('U');
@@ -93,16 +91,15 @@ class UpdateTaskPriority extends Command
         $projects = [];
 
         // Get all tasks projects and project owner IDs
-        GenericModel::setCollection('projects');
         foreach ($tasksBumpedPerProject as $projectId => $count) {
-            $project = GenericModel::where('_id', '=', $projectId)->first();
+            $project = GenericModel::findModel($projectId, 'projects');
             $projects[$projectId] = $project;
             if ($project->acceptedBy) {
                 $projectOwnerIds[] = $project->acceptedBy;
             }
         }
 
-        $recipients = Profile::all();
+        $recipients = GenericModel::allModels('profiles');
 
         // send slack notification to all admins and POs about task priority change
         foreach ($recipients as $recipient) {
@@ -128,7 +125,5 @@ class UpdateTaskPriority extends Command
                 }
             }
         }
-
-        GenericModel::setCollection($preSetCollection);
     }
 }

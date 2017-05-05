@@ -53,10 +53,9 @@ class NotifyAdminsAndPoAboutLateAndQaTasks extends Command
 
         // Get all tasks projects so we can check project owners
         $projects = [];
-        GenericModel::setCollection('projects');
         foreach ($tasks as $task) {
             if (!key_exists($task->project_id, $projects)) {
-                $project = GenericModel::find($task->project_id);
+                $project = GenericModel::findModel($task->project_id, 'projects');
                 if ($project) {
                     $projects[$project->_id] = $project;
                 }

@@ -33,8 +33,7 @@ class SprintReminderForUnassignedTasks extends Command
      */
     public function handle()
     {
-        GenericModel::setCollection('projects');
-        $projects = GenericModel::all();
+        $projects = GenericModel::allModels('projects');
 
         $activeProjects = [];
         $members = [];
@@ -58,10 +57,9 @@ class SprintReminderForUnassignedTasks extends Command
                         $sprints[$sprint->id] = $sprint;
                     }
                 }
-                GenericModel::setCollection('profiles');
                 if (!empty($project->members)) {
                     foreach ($project->members as $memberId) {
-                        $member = GenericModel::where('_id', '=', $memberId)->first();
+                        $member = GenericModel::findModel($memberId, 'profiles');
                         $members[$memberId] = $member;
                     }
                 }

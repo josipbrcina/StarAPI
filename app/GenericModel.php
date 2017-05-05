@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Services\GenericModelQueryBuilder;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -258,6 +259,40 @@ class GenericModel extends StarModel
         }
 
         return $savedModel;
+    }
+
+    /**
+     * @param null $collection
+     * @param null $databaseName
+     * @param array $attributes
+     * @return static
+     */
+    public static function createModel(array $attributes = [], $collection = null, $databaseName = null)
+    {
+        $databaseToReconnect = null;
+        $preSetCollection = null;
+
+        if ($collection !== null) {
+            $preSetCollection = self::getCollection();
+            self::setCollection($collection);
+        }
+
+        if ($databaseName !== null) {
+            $databaseToReconnect = Config::get('database.connections.' . Config::get('database.default') . '.database');
+            self::setDatabaseConnection($databaseName);
+        }
+
+        $createdModel = parent::create($attributes);
+
+        if ($databaseName !== null) {
+            self::setDatabaseConnection($databaseToReconnect);
+        }
+
+        if ($collection !== null) {
+            self::setCollection($preSetCollection);
+        }
+
+        return $createdModel;
     }
 
     /**

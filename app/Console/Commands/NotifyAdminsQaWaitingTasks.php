@@ -51,8 +51,7 @@ class NotifyAdminsQaWaitingTasks extends Command
         $projectOwners = [];
         foreach ($tasksInQa as $task) {
             if (!array_key_exists($task->project_id, $projects)) {
-                GenericModel::setCollection('projects');
-                $project = GenericModel::find($task->project_id);
+                $project = GenericModel::findModel($task->project_id, 'projects');
                 if ($project) {
                     $projects[$project->_id] = $project;
                 }

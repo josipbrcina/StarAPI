@@ -106,8 +106,7 @@ class TaskUpdateXP
             }
 
             // Get project owner id
-            GenericModel::setCollection('projects');
-            $project = GenericModel::find($task->project_id);
+            $project = GenericModel::findModel($task->project_id, 'projects');
             $projectOwner = null;
             if ($project) {
                 $projectOwner = Profile::find($project->acceptedBy);
@@ -136,20 +135,17 @@ class TaskUpdateXP
 
     /**
      * @param Profile $profile
-     * @return GenericModel
+     * @return GenericModel|mixed
      */
     private function getXpRecord(Profile $profile)
     {
-        $oldCollection = GenericModel::getCollection();
-        GenericModel::setCollection('xp');
         if (!$profile->xp_id) {
             $profileXp = new GenericModel(['records' => []]);
-            $profileXp->save();
+            $profileXp->saveModel('xp');
             $profile->xp_id = $profileXp->_id;
         } else {
-            $profileXp = GenericModel::find($profile->xp_id);
+            $profileXp = GenericModel::findModel($profile->xp_id, 'xp');
         }
-        GenericModel::setCollection($oldCollection);
 
         return $profileXp;
     }

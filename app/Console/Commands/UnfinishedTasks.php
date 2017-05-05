@@ -36,8 +36,7 @@ class UnfinishedTasks extends Command
     public function handle()
     {
         // Get all projects
-        GenericModel::setCollection('projects');
-        $projects = GenericModel::all();
+        $projects = GenericModel::allModels('projects');
 
         // Get all admin users
         GenericModel::setCollection('profiles');
