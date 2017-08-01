@@ -2,54 +2,36 @@
 
 namespace App\Services\Email;
 
-use App\Services\Email\EmailProviderInterface as EmailProviderInterface;
 use Mailgun\Mailgun as MailGunSender;
 
 /**
  * Class MailGun
  * @package App\Services\Email
  */
-class MailGun implements EmailProviderInterface
+class MailGun extends Mailer
 {
-    private $to;
-    private $from;
-    private $subject;
-    private $body;
-
-    public function setTo($to)
-    {
-        $this->to = $to;
-    }
-
-    public function setFrom($from)
-    {
-        $this->from = $from;
-    }
-
-    public function setSubject($subject)
-    {
-        $this->subject = $subject;
-    }
-
-    public function setBody($body)
-    {
-        $this->body = $body;
-    }
-
     public function send()
     {
-        $apiKey = env(MAILGUN_KEY);
-        $domain = env(MAILGUN_DOMAIN);
+        $apiKey = env('MAILGUN_API_KEY');
+        $domain = env('MAILGUN_DOMAIN');
+
+        $options = $this->getOptions();
+        $parameters = [
+            'from' => $this->getFrom(),
+            'to' => $this->getTo(),
+            'subject' => $this->getSubject(),
+            'text' => $this->getTextBody(),
+            'html' => $this->getHtmlBody(),
+        ];
+
+        if (array_key_exists('cc', $options)) {
+            $parameters['cc'] = $options['cc'];
+        }
+        if (array_key_exists('bcc', $options)) {
+            $parameters['bcc'] = $options['bcc'];
+        }
 
         $mg = MailGunSender::create($apiKey);
-        $mg->messages()->send(
-            $domain,
-            [
-                'from' => $this->from,
-                'to' => $this->to,
-                'subject' => $this->subject,
-                'text' => $this->body
-            ]
-        );
+        $mg->messages()->send($domain, $parameters);
     }
 }

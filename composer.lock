@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "3d4526d4414406e7fb4c2c4efa8437f4",
-    "content-hash": "313991047d4205b915f07e8731b2746e",
+    "hash": "a4edead8ceb30332504c4ed96189c084",
+    "content-hash": "208c977602f5ebd7d701f200dfe59bdb",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -546,6 +546,56 @@
             "description": "DOMPDF is a CSS 2.1 compliant HTML to PDF converter",
             "homepage": "https://github.com/dompdf/dompdf",
             "time": "2017-02-16 02:40:40"
+        },
+        {
+            "name": "dotblue/mandrill",
+            "version": "v1.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dotblue/Mandrill.git",
+                "reference": "9836ef3a74c38d63d36f88f230551910a6403ac8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/dotblue/Mandrill/zipball/9836ef3a74c38d63d36f88f230551910a6403ac8",
+                "reference": "9836ef3a74c38d63d36f88f230551910a6403ac8",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "php": ">=5.4"
+            },
+            "require-dev": {
+                "nette/nette": "~2.1",
+                "nette/tester": "@dev"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "DotBlue\\Mandrill": "."
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Pavel Kučera",
+                    "homepage": "http://github.com/pavelkucera"
+                },
+                {
+                    "name": "dotBlue",
+                    "homepage": "http://dotblue.net"
+                }
+            ],
+            "description": "OO wrapper above Mandrill API for sending e-mails",
+            "keywords": [
+                "e-mail",
+                "mandrill",
+                "nette"
+            ],
+            "time": "2014-02-16 08:45:22"
         },
         {
             "name": "guzzle/guzzle",

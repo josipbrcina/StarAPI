@@ -26,11 +26,30 @@ interface EmailProviderInterface
     public function setSubject($subject);
 
     /**
-     * Set email body
-     * @param $body
+     * Set email text body
+     * @param $textBody
      * @return mixed
      */
-    public function setBody($body);
+    public function setTextBody($textBody);
+
+    /**
+     * Set email html body
+     * @param $htmlBody
+     * @return mixed
+     */
+    public function setHtmlBody($htmlBody);
+
+    /**
+     * Send email
+     * @return mixed
+     */
+
+    /**
+     * Set additional headers
+     * @param $options
+     * @return mixed
+     */
+    public function setOptions($options);
 
     /**
      * Send email

@@ -18,7 +18,8 @@
         "mookofe/tail": "1.*",
         "mailgun/mailgun-php": "^2.3",
         "php-http/curl-client": "^1.7",
-        "guzzlehttp/psr7": "^1.4"
+        "guzzlehttp/psr7": "^1.4",
+        "dotblue/mandrill": "^1.3"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
