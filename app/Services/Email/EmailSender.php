@@ -39,9 +39,19 @@ class EmailSender
         $this->emailProviderInterface->setSubject($subject);
     }
 
-    public function setBody($body)
+    public function setTextBody($textBody)
     {
-        $this->emailProviderInterface->setBody($body);
+        $this->emailProviderInterface->setTextBody($textBody);
+    }
+
+    public function setHtmlBody($htmlBody)
+    {
+        $this->emailProviderInterface->setHtmlBody($htmlBody);
+    }
+
+    public function setOptions($options)
+    {
+        $this->emailProviderInterface->setOptions($options);
     }
 
     public function send()

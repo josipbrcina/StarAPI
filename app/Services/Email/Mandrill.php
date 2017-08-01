@@ -2,41 +2,37 @@
 
 namespace App\Services\Email;
 
-use App\Services\Email\EmailProviderInterface as EmailProviderInterface;
+use DotBlue\Mandrill\Exporters\MessageExporter;
+use DotBlue\Mandrill\Mandrill as MandrillSender;
+use DotBlue\Mandrill\Message;
 
 /**
  * Class Mandrill
  * @package App\Services\Email
  */
-class Mandrill implements EmailProviderInterface
+class Mandrill extends Mailer
 {
-    private $to;
-    private $from;
-    private $subject;
-    private $body;
-
-    public function setTo($to)
-    {
-        $this->to = $to;
-    }
-
-    public function setFrom($from)
-    {
-        $this->from = $from;
-    }
-
-    public function setSubject($subject)
-    {
-        $this->subject = $subject;
-    }
-
-    public function setBody($body)
-    {
-        $this->body = $body;
-    }
-
     public function send()
     {
-        //TODO: implement mandrill package and put logic here
+        $apiKey = env('MANDRILL_API_KEY');
+        $mandrill = new MandrillSender($apiKey);
+        $mailer = new \DotBlue\Mandrill\Mailer(new MessageExporter(), $mandrill);
+
+        $options = $this->getOptions();
+
+        $message = new Message();
+        $message->setFrom($this->getFrom());
+        $message->setSubject($this->getSubject());
+        $message->addTo($this->getTo());
+        $message->setHtml($this->getHtmlBody());
+        $message->setText($this->getTextBody());
+        if (array_key_exists('cc', $options)) {
+            $message->addCc($options['cc']);
+        }
+        if (array_key_exists('bcc', $options)) {
+            $message->addBcc($options['bcc']);
+        }
+
+        $mailer->send($message);
     }
 }
